@@ -16,4 +16,4 @@ export const DEFAULT_SEEK_LARGE = 10
 
 // Toast appearance
 export const TOAST_FONT_SIZE_KEY = 'TOAST_FONT_SIZE'
-export const DEFAULT_TOAST_FONT_SIZE = 14
+export const DEFAULT_TOAST_FONT_SIZE = 16
