@@ -4,16 +4,57 @@ import "./styles.css";
 import { Renderer } from './components/renderer';
 import { log } from './utils/logger';
 import { ElementObserver } from './utils/elementObserver';
-import { PAGE_PATHS, ROOT_ID, 
-  NO_SPOILER_STORAGE_KEY,
+import { PAGE_PATHS, ROOT_ID,
+  SHORTCUTS_OVERLAY_ID,
   WITH_SPOILER_CLASS,
   VIDEO_SELECTOR } from './constants'
 import { observeRouteChange } from './utils/routeChangeObserver';
+import { mountShortcutsOverlay } from './components/ShortcutsOverlay';
+import { getNoSpoiler, setNoSpoiler } from './utils/settings';
 
 log("🏐🏐🏐")
 
+const shortcutsOverlay = mountShortcutsOverlay(SHORTCUTS_OVERLAY_ID);
+
 setupSpoilerFreeToggleListener();
+setupGlobalKeyboard();
 await initializeSpoilerFreeState();
+
+// Global shortcuts available on every VBTV page (not just the player):
+// - "s"  toggles spoiler-free mode
+// - "?"  (Shift+/) toggles the shortcuts overlay
+// - Esc  closes the overlay
+function setupGlobalKeyboard() {
+  document.addEventListener('keydown', (e) => {
+    const target = e.target as HTMLElement | null;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      return;
+    }
+
+    if (e.key === '?') {
+      e.preventDefault();
+      shortcutsOverlay.toggle();
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      shortcutsOverlay.hide();
+      return;
+    }
+
+    if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+      e.preventDefault();
+      toggleSpoilerFree();
+    }
+  });
+}
+
+async function toggleSpoilerFree() {
+  const next = !(await getNoSpoiler());
+  await setNoSpoiler(next);
+  handleNoSpoilerChange(next);
+  log('toggleSpoilerFree ->', next);
+}
 
 function setupSpoilerFreeToggleListener() {
   chrome.runtime.onMessage.addListener((message) => {
@@ -37,16 +78,14 @@ function handleNoSpoilerChange(noSpoiler: boolean) {
 // src/content/feature.ts
 async function initializeSpoilerFreeState() {
   // Check initial state when content script loads
-  await chrome.storage.local.get([NO_SPOILER_STORAGE_KEY], (result) => {
-    const noSpoiler = result[NO_SPOILER_STORAGE_KEY] || false
-    log("initializeSpoilerFreeState noSpoiler", noSpoiler)
-    setTimeout(
-      () => handleNoSpoilerChange(noSpoiler),
-      noSpoiler === false
-        ? 400 // delay applying spoiler styles on initialization to wait for source rendering
-        : 0
-    )
-  });
+  const noSpoiler = await getNoSpoiler()
+  log("initializeSpoilerFreeState noSpoiler", noSpoiler)
+  setTimeout(
+    () => handleNoSpoilerChange(noSpoiler),
+    noSpoiler === false
+      ? 400 // delay applying spoiler styles on initialization to wait for source rendering
+      : 0
+  )
 };
 
 let observer: ElementObserver | null;

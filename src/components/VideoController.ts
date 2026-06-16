@@ -1,4 +1,6 @@
 import { log } from "../utils/logger";
+import { getSeekIntervals } from "../utils/settings";
+import { DEFAULT_SEEK_SMALL, DEFAULT_SEEK_LARGE, SEEK_SMALL_KEY, SEEK_LARGE_KEY } from "../constants";
 
 interface PlayerShortcuts {
   seek(seconds: number): void;
@@ -26,6 +28,9 @@ export class VideoController implements PlayerShortcuts {
   private readonly PLAYBACK_RATE_DELTA = 0.20;
   private handlers: VideoControllerOptions["handlers"];
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
+  private seekSmall: number = DEFAULT_SEEK_SMALL;
+  private seekLarge: number = DEFAULT_SEEK_LARGE;
+  private storageListener: Parameters<typeof chrome.storage.onChanged.addListener>[0] | null = null;
 
   constructor({
     selector,
@@ -34,7 +39,25 @@ export class VideoController implements PlayerShortcuts {
     this.selector = selector
     this.handlers = handlers
     this.getVideo()
+    this.loadSeekIntervals()
+    this.watchSeekIntervals()
     this.setupShortcuts()
+  }
+
+  private async loadSeekIntervals(): Promise<void> {
+    const { small, large } = await getSeekIntervals()
+    this.seekSmall = small
+    this.seekLarge = large
+  }
+
+  private watchSeekIntervals(): void {
+    this.storageListener = (changes, area) => {
+      if (area !== 'local') return
+      if (changes[SEEK_SMALL_KEY] || changes[SEEK_LARGE_KEY]) {
+        this.loadSeekIntervals()
+      }
+    }
+    chrome.storage.onChanged.addListener(this.storageListener)
   }
 
   private getVideo() {
@@ -54,16 +77,16 @@ export class VideoController implements PlayerShortcuts {
       switch (e.key.toLowerCase()) {
         // Seek controls
         case 'arrowleft':
-          this.seek(-5);
+          this.seek(-this.seekSmall);
           break;
         case 'arrowright':
-          this.seek(5);
+          this.seek(this.seekSmall);
           break;
         case 'j':
-          this.seek(-10);
+          this.seek(-this.seekLarge);
           break;
         case 'l':
-          this.seek(10);
+          this.seek(this.seekLarge);
           break;
         case 'home':
           if (this.video) this.video.currentTime = 0;
@@ -122,6 +145,12 @@ export class VideoController implements PlayerShortcuts {
     if (this.keydownListener) {
       document.removeEventListener('keydown', this.keydownListener);
       this.keydownListener = null;
+    }
+
+    // Remove storage listener
+    if (this.storageListener) {
+      chrome.storage.onChanged.removeListener(this.storageListener);
+      this.storageListener = null;
     }
 
     // Clean up media session handlers
