@@ -1,5 +1,5 @@
 // src/Popup.tsx
-import { createSignal, onMount, For } from 'solid-js';
+import { createSignal, onMount, onCleanup, For } from 'solid-js';
 import { Switch } from '../Switch';
 import styles from './Popup.module.css';
 import { NO_SPOILER_STORAGE_KEY, DEFAULT_SEEK_SMALL, DEFAULT_SEEK_LARGE, DEFAULT_TOAST_FONT_SIZE } from '../../constants';
@@ -51,6 +51,18 @@ const Popup = () => {
         setIsEnabled((changes[NO_SPOILER_STORAGE_KEY].newValue as boolean | undefined) ?? true);
       }
     });
+
+    // "s" toggles spoiler mode from inside the popup too (mirrors the page hotkey).
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        handleToggle(!isEnabled());
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    onCleanup(() => window.removeEventListener('keydown', onKey));
   });
 
   const notifyContent = async (enabled: boolean) => {

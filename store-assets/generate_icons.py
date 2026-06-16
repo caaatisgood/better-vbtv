@@ -10,11 +10,12 @@ from PIL import Image
 import os
 
 YELLOW = np.array([253, 184, 19], float)
-WARM   = np.array([238, 128, 52], float)   # blended-down orange
+ORANGE = np.array([247, 85,  28], float)   # vivid bright orange
 NAVY   = np.array([ 30, 38, 140], float)
 NAVY_D = np.array([ 22, 26,  96], float)
 
-STOPS = [(0.0, YELLOW), (0.50, WARM), (0.82, NAVY), (1.0, NAVY_D)]
+# orange holds a plateau in the middle so it reads strongly, not as a thin edge
+STOPS = [(0.0, YELLOW), (0.30, ORANGE), (0.52, ORANGE), (0.84, NAVY), (1.0, NAVY_D)]
 
 def ramp(u, stops):
     pos = np.array([p for p, _ in stops]); cols = np.array([c for _, c in stops])
@@ -24,13 +25,13 @@ def ramp(u, stops):
     return out
 
 # ---------- ICON (blended sweep, circular) ----------
-def icon(size, supersample=4, grain=0.07, seed=7, amp=0.34, squash=0.7, lo=-1.05, hi=1.05):
+def icon(size, supersample=4, grain=0.07, seed=7, amp=0.45, w2=0.18, squash=0.82, lo=-1.05, hi=1.05):
     S = size * supersample
     yy, xx = np.mgrid[0:S, 0:S].astype(float)
     x = (xx / S) * 2 - 1; y = (yy / S) * 2 - 1
     a = np.deg2rad(-38)
     t = x * np.cos(a) + y * np.sin(a); p = -x * np.sin(a) + y * np.cos(a)
-    tb = t + amp * np.sin(1.3 * p + 0.5) + 0.08 * np.sin(3.0 * p + 1.8)   # one soft bend
+    tb = t + amp * np.sin(1.4 * p + 0.5) + w2 * np.sin(3.3 * p + 1.8)     # wavy blend line
     u = np.clip((tb - lo) / (hi - lo), 0, 1)
     u = np.clip(0.5 + (u - 0.5) * squash, 0, 1)                          # compress -> blend
     img = ramp(u, STOPS)
@@ -49,14 +50,14 @@ def icon(size, supersample=4, grain=0.07, seed=7, amp=0.34, squash=0.7, lo=-1.05
     return Image.fromarray(out, "RGBA")
 
 # ---------- BACKGROUND (dark, big blended sweep, grain, vignette) ----------
-def background(w, h, grain=0.035, seed=11, darken=0.42, amp=0.22, squash=0.85):
+def background(w, h, grain=0.035, seed=11, darken=0.42, amp=0.30, w2=0.10, squash=0.88):
     Sf = 2; W, H = w * Sf, h * Sf
     yy, xx = np.mgrid[0:H, 0:W].astype(float)
     m = max(W, H)
     x = (xx - W / 2) / m * 2; y = (yy - H / 2) / m * 2
     a = np.deg2rad(-32)
     t = x * np.cos(a) + y * np.sin(a); p = -x * np.sin(a) + y * np.cos(a)
-    tb = t + amp * np.sin(1.1 * p + 0.4)
+    tb = t + amp * np.sin(1.1 * p + 0.4) + w2 * np.sin(2.6 * p + 1.5)
     u = np.clip((tb + 1.05) / 2.10, 0, 1)
     u = np.clip(0.5 + (u - 0.5) * squash, 0, 1)
     img = ramp(u, STOPS)
