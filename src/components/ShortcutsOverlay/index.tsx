@@ -37,12 +37,25 @@ export function mountShortcutsOverlay(rootId: string): ShortcutsOverlayHandle {
       setLarge(large);
     });
 
+  // When the player is fullscreen, only the fullscreen element's subtree is
+  // painted — re-parent the overlay into it so it stays visible on /player.
+  const ensureParent = () => {
+    if (!host) return;
+    const parent = (document.fullscreenElement as HTMLElement | null) ?? document.body;
+    if (host.parentElement !== parent) parent.appendChild(host);
+  };
+
   const show = () => {
     refresh();
+    ensureParent();
     setVisible(true);
   };
   const hide = () => setVisible(false);
   const toggle = () => (visible() ? hide() : show());
+
+  document.addEventListener('fullscreenchange', () => {
+    if (visible()) ensureParent();
+  });
 
   render(
     () => (

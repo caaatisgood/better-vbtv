@@ -15,24 +15,32 @@ import { getNoSpoiler, setNoSpoiler } from './utils/settings';
 log("🏐🏐🏐")
 
 const shortcutsOverlay = mountShortcutsOverlay(SHORTCUTS_OVERLAY_ID);
+let onPlayerPage = false;
 
 setupSpoilerFreeToggleListener();
 setupGlobalKeyboard();
 await initializeSpoilerFreeState();
 
-// Global shortcuts available on every VBTV page (not just the player):
-// - "s"  toggles spoiler-free mode
-// - "?"  (Shift+/) toggles the shortcuts overlay
+// Keyboard shortcuts:
+// - "s"  toggles spoiler-free mode (any VBTV page)
+// - "?"  (Shift+/) toggles the shortcuts overlay (player page only)
 // - Esc  closes the overlay
+//
+// Listen on `window` in the CAPTURE phase so we receive the key before the
+// video.js player (or the page's "/"-to-search handler) can swallow it. This
+// is why arrow-seek worked but "?" did not — video.js intercepts focused keys.
 function setupGlobalKeyboard() {
-  document.addEventListener('keydown', (e) => {
+  window.addEventListener('keydown', (e) => {
     const target = e.target as HTMLElement | null;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
       return;
     }
 
-    if (e.key === '?') {
+    const isQuestionMark = e.key === '?' || (e.code === 'Slash' && e.shiftKey);
+    if (isQuestionMark) {
+      if (!onPlayerPage) return; // overlay is player-only
       e.preventDefault();
+      e.stopPropagation();
       shortcutsOverlay.toggle();
       return;
     }
@@ -44,9 +52,10 @@ function setupGlobalKeyboard() {
 
     if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
       e.preventDefault();
+      e.stopPropagation();
       toggleSpoilerFree();
     }
-  });
+  }, true);
 }
 
 async function toggleSpoilerFree() {
@@ -109,7 +118,8 @@ if (window.navigation) {
 }
 
 function handleRouteChange(pathname: string) {
-  if (pathname === PAGE_PATHS.PLAYER) {
+  onPlayerPage = pathname === PAGE_PATHS.PLAYER
+  if (onPlayerPage) {
     observer = new ElementObserver({ selector: VIDEO_SELECTOR })
     observer.observe(() => {
       renderer = createRenderer()
@@ -117,6 +127,7 @@ function handleRouteChange(pathname: string) {
     })
   } else {
     log("Not on player page")
+    shortcutsOverlay.hide()
     cleanupObserver()
     cleanupRenderer()
   }
