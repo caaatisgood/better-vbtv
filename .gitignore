@@ -5,3 +5,5 @@ dist/
 .gstack/
 .playwright-mcp/
 store-assets/html/
+__pycache__/
+*.pyc

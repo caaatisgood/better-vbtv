@@ -2,6 +2,8 @@ import { render } from 'solid-js/web';
 import { createSignal } from 'solid-js';
 import styles from './Toast.module.css';
 import { registerToast } from '../../utils/toast';
+import { getToastFontSize, clampFont } from '../../utils/settings';
+import { TOAST_FONT_SIZE_KEY, DEFAULT_TOAST_FONT_SIZE } from '../../constants';
 
 const VISIBLE_MS = 1300;
 
@@ -15,8 +17,16 @@ export function mountToast(rootId: string): void {
 
   const [msg, setMsg] = createSignal('');
   const [shown, setShown] = createSignal(false);
+  const [fontSize, setFontSize] = createSignal(DEFAULT_TOAST_FONT_SIZE);
   let el: HTMLDivElement | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
+
+  getToastFontSize().then(setFontSize);
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes[TOAST_FONT_SIZE_KEY]) {
+      setFontSize(clampFont(changes[TOAST_FONT_SIZE_KEY].newValue, DEFAULT_TOAST_FONT_SIZE));
+    }
+  });
 
   const show = (message: string) => {
     setMsg(message);
@@ -44,7 +54,11 @@ export function mountToast(rootId: string): void {
 
   render(
     () => (
-      <div ref={el} classList={{ [styles.toast]: true, [styles.shown]: shown() }}>
+      <div
+        ref={el}
+        classList={{ [styles.toast]: true, [styles.shown]: shown() }}
+        style={{ 'font-size': `${fontSize()}px` }}
+      >
         {msg()}
       </div>
     ),

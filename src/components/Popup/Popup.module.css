@@ -87,6 +87,19 @@
   font-size: 0.85rem;
 }
 
+.toastPreview {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.45em 0.85em;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .shortcuts {
   display: flex;
   flex-direction: column;

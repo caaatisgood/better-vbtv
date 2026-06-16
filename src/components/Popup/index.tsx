@@ -2,7 +2,7 @@
 import { createSignal, onMount, For } from 'solid-js';
 import { Switch } from '../Switch';
 import styles from './Popup.module.css';
-import { NO_SPOILER_STORAGE_KEY, DEFAULT_SEEK_SMALL, DEFAULT_SEEK_LARGE } from '../../constants';
+import { NO_SPOILER_STORAGE_KEY, DEFAULT_SEEK_SMALL, DEFAULT_SEEK_LARGE, DEFAULT_TOAST_FONT_SIZE } from '../../constants';
 import {
   getNoSpoiler,
   setNoSpoiler,
@@ -11,6 +11,11 @@ import {
   clampSeek,
   SEEK_MIN,
   SEEK_MAX,
+  getToastFontSize,
+  setToastFontSize,
+  clampFont,
+  TOAST_FONT_MIN,
+  TOAST_FONT_MAX,
 } from '../../utils/settings';
 import { log } from '../../utils/logger';
 
@@ -30,12 +35,14 @@ const Popup = () => {
   const [isEnabled, setIsEnabled] = createSignal(true);
   const [small, setSmall] = createSignal(DEFAULT_SEEK_SMALL);
   const [large, setLarge] = createSignal(DEFAULT_SEEK_LARGE);
+  const [fontSize, setFontSize] = createSignal(DEFAULT_TOAST_FONT_SIZE);
 
   onMount(async () => {
     setIsEnabled(await getNoSpoiler());
     const iv = await getSeekIntervals();
     setSmall(iv.small);
     setLarge(iv.large);
+    setFontSize(await getToastFontSize());
 
     // Reflect changes made elsewhere (e.g. the "s" hotkey on the page).
     chrome.storage.onChanged.addListener((changes, area) => {
@@ -69,6 +76,12 @@ const Popup = () => {
     setSmall(s);
     setLarge(l);
     await setSeekIntervals(s, l);
+  };
+
+  const commitFont = async (next: number) => {
+    const size = clampFont(next, DEFAULT_TOAST_FONT_SIZE);
+    setFontSize(size);
+    await setToastFontSize(size);
   };
 
   return (
@@ -113,6 +126,26 @@ const Popup = () => {
             value={large()}
             onChange={(e) => commit(small(), Number(e.currentTarget.value))}
           />
+        </div>
+      </div>
+
+      <hr class={styles.divider} />
+
+      <div class={styles.section}>
+        <p class={styles.sectionTitle}>Toast feedback</p>
+        <div class={styles.field}>
+          <label>Font size (px)</label>
+          <input
+            type="number"
+            min={TOAST_FONT_MIN}
+            max={TOAST_FONT_MAX}
+            value={fontSize()}
+            onChange={(e) => commitFont(Number(e.currentTarget.value))}
+          />
+        </div>
+        <div class={styles.field}>
+          <span class={styles.hint}>Preview</span>
+          <span class={styles.toastPreview} style={{ 'font-size': `${fontSize()}px` }}>⏩ +{small()}s</span>
         </div>
       </div>
 
