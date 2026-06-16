@@ -1,7 +1,15 @@
 {
-  "name": "vbtv-spoiler-no-more",
-  "version": "1.0.0",
-  "description": "",
+  "name": "better-vbtv",
+  "version": "1.1.0",
+  "description": "Better VBTV — spoiler-free Volleyball World TV with keyboard controls",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caaatisgood/better-vbtv.git"
+  },
+  "homepage": "https://github.com/caaatisgood/better-vbtv#readme",
+  "bugs": {
+    "url": "https://github.com/caaatisgood/better-vbtv/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -12,18 +20,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@crxjs/vite-plugin": "2.0.0-beta.28",
-    "@types/chrome": "^0.0.280",
-    "@types/node": "^22.8.1",
-    "bestzip": "^2.2.1",
-    "navigation-api-types": "^0.5.1",
-    "solid-devtools": "^0.30.1",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "vite-plugin-solid": "^2.10.2"
+    "@crxjs/vite-plugin": "^2.6.1",
+    "@types/chrome": "^0.1.43",
+    "@types/node": "^22.18.0",
+    "bestzip": "^3.0.1",
+    "navigation-api-types": "^0.6.1",
+    "solid-devtools": "^0.34.5",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.20",
+    "vite-plugin-solid": "^2.11.12"
   },
   "dependencies": {
-    "@solidjs/router": "^0.15.1",
-    "solid-js": "^1.9.3"
+    "@solidjs/router": "^0.16.1",
+    "solid-js": "^1.9.13"
   }
 }

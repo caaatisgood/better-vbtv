@@ -1,4 +1,7 @@
 import { log } from "../utils/logger";
+import { getSeekIntervals } from "../utils/settings";
+import { toast } from "../utils/toast";
+import { DEFAULT_SEEK_SMALL, DEFAULT_SEEK_LARGE, SEEK_SMALL_KEY, SEEK_LARGE_KEY } from "../constants";
 
 interface PlayerShortcuts {
   seek(seconds: number): void;
@@ -10,31 +13,45 @@ interface PlayerShortcuts {
 
 interface VideoControllerOptions {
   selector: string;
-  handlers: {
-    onSetPlaybackRate: (value: number) => void,
-    onSetVolumn: (value: number) => void,
-  };
 }
 
 export class VideoController implements PlayerShortcuts {
   private selector: string;
-  private video: HTMLVideoElement | null = null;  
+  private video: HTMLVideoElement | null = null;
   private readonly FPS: number = 30;
   private readonly MIN_PLAYBACK_RATE: number = 0.20;
   private readonly MAX_PLAYBACK_RATE: number = 5;
   private readonly VOLUMN_DELTA = 0.05;
   private readonly PLAYBACK_RATE_DELTA = 0.20;
-  private handlers: VideoControllerOptions["handlers"];
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
+  private seekSmall: number = DEFAULT_SEEK_SMALL;
+  private seekLarge: number = DEFAULT_SEEK_LARGE;
+  private storageListener: Parameters<typeof chrome.storage.onChanged.addListener>[0] | null = null;
 
   constructor({
     selector,
-    handlers,
   }: VideoControllerOptions) {
     this.selector = selector
-    this.handlers = handlers
     this.getVideo()
+    this.loadSeekIntervals()
+    this.watchSeekIntervals()
     this.setupShortcuts()
+  }
+
+  private async loadSeekIntervals(): Promise<void> {
+    const { small, large } = await getSeekIntervals()
+    this.seekSmall = small
+    this.seekLarge = large
+  }
+
+  private watchSeekIntervals(): void {
+    this.storageListener = (changes, area) => {
+      if (area !== 'local') return
+      if (changes[SEEK_SMALL_KEY] || changes[SEEK_LARGE_KEY]) {
+        this.loadSeekIntervals()
+      }
+    }
+    chrome.storage.onChanged.addListener(this.storageListener)
   }
 
   private getVideo() {
@@ -54,22 +71,28 @@ export class VideoController implements PlayerShortcuts {
       switch (e.key.toLowerCase()) {
         // Seek controls
         case 'arrowleft':
-          this.seek(-5);
+          this.seek(-this.seekSmall);
+          toast(`⏪ -${this.seekSmall}s`);
           break;
         case 'arrowright':
-          this.seek(5);
+          this.seek(this.seekSmall);
+          toast(`⏩ +${this.seekSmall}s`);
           break;
         case 'j':
-          this.seek(-10);
+          this.seek(-this.seekLarge);
+          toast(`⏪ -${this.seekLarge}s`);
           break;
         case 'l':
-          this.seek(10);
+          this.seek(this.seekLarge);
+          toast(`⏩ +${this.seekLarge}s`);
           break;
         case 'home':
           if (this.video) this.video.currentTime = 0;
+          toast('⏮ Start');
           break;
         case 'end':
           if (this.video) this.video.currentTime = this.video.duration;
+          toast('⏭ End');
           break;
 
         // Volume controls
@@ -80,19 +103,29 @@ export class VideoController implements PlayerShortcuts {
           this.adjustVolume(-this.VOLUMN_DELTA);
           break;
         case 'm':
-          if (this.video) this.video.muted = !this.video.muted;
+          if (this.video) {
+            this.video.muted = !this.video.muted;
+            toast(this.video.muted ? '🔇 Muted' : '🔊 Unmuted');
+          }
           break;
 
         // Playback controls
         case 'k':
         case ' ':
           this.togglePlay();
+          if (this.video) toast(this.video.paused ? '⏸ Paused' : '▶️ Playing');
           break;
         case '.':
-          if (this.video?.paused) this.seekFrame(1);
+          if (this.video?.paused) {
+            this.seekFrame(1);
+            toast('⏭ Frame +1');
+          }
           break;
         case ',':
-          if (this.video?.paused) this.seekFrame(-1);
+          if (this.video?.paused) {
+            this.seekFrame(-1);
+            toast('⏮ Frame -1');
+          }
           break;
         case '>':
           this.adjustPlaybackRate(this.PLAYBACK_RATE_DELTA);
@@ -124,6 +157,12 @@ export class VideoController implements PlayerShortcuts {
       this.keydownListener = null;
     }
 
+    // Remove storage listener
+    if (this.storageListener) {
+      chrome.storage.onChanged.removeListener(this.storageListener);
+      this.storageListener = null;
+    }
+
     // Clean up media session handlers
     if ('mediaSession' in navigator) {
       navigator.mediaSession.setActionHandler('stop', null);
@@ -147,7 +186,8 @@ export class VideoController implements PlayerShortcuts {
     if (!this.video) return;
     const volumn = Math.max(0, Math.min(1, this.video.volume + delta));
     this.video.volume = volumn;
-    this.handlers.onSetVolumn(volumn);
+    if (this.video.muted && volumn > 0) this.video.muted = false;
+    toast(`🔊 ${Math.round(volumn * 100)}%`);
   }
 
   public adjustPlaybackRate(delta: number): void {
@@ -161,7 +201,7 @@ export class VideoController implements PlayerShortcuts {
     );
     const formattedRate = parseFloat(parseFloat((rate).toString()).toPrecision(2))
     this.video.playbackRate = formattedRate
-    this.handlers.onSetPlaybackRate(formattedRate)
+    toast(`${formattedRate}× speed`)
   }
 
   public togglePlay(): void {

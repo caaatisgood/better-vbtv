@@ -2,3 +2,8 @@
 node_modules/
 dist/
 *.zip
+.gstack/
+.playwright-mcp/
+store-assets/html/
+__pycache__/
+*.pyc

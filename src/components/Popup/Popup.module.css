@@ -46,6 +46,92 @@
   border-top: 1px solid #333;
 }
 
+.hint {
+  color: #6b7280;
+  font-size: 0.7rem;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionTitle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #818cf8;
+  margin: 0 0 0.25rem 0;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.field label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.field input {
+  width: 64px;
+  padding: 0.3rem 0.5rem;
+  background: #27272a;
+  color: #fff;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.toastPreview {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.45em 0.85em;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.shortcutRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: #d4d4d8;
+}
+
+.popup kbd {
+  display: inline-block;
+  min-width: 1.1rem;
+  text-align: center;
+  padding: 0.05rem 0.35rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 0.7rem;
+  color: #e4e4e7;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+}
+
+.shortcutRow kbd {
+  flex: 0 0 84px;
+}
+
 .footer {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.75rem;
