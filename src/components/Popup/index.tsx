@@ -97,8 +97,8 @@ const Popup = () => {
       <div>
         <p class={styles.status}>
           {isEnabled()
-            ? <>😌&nbsp;<span>Spoilers will be hidden across VBTV</span></>
-            : <>😮&nbsp;<span>Spoilers will be shown normally</span></>
+            ? <>🙈&nbsp;<span>Spoilers will be hidden across VBTV</span></>
+            : <>👀&nbsp;<span>Spoilers will be shown normally</span></>
           }
         </p>
       </div>
