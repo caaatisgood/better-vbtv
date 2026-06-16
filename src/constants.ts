@@ -1,5 +1,6 @@
 export const ROOT_ID = "better-vbtv"
 export const SHORTCUTS_OVERLAY_ID = "better-vbtv-shortcuts"
+export const TOAST_ID = "better-vbtv-toast"
 export const VIDEO_SELECTOR = 'video'
 export const PAGE_PATHS = {
   PLAYER: '/player'

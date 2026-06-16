@@ -6,14 +6,18 @@ import { log } from './utils/logger';
 import { ElementObserver } from './utils/elementObserver';
 import { PAGE_PATHS, ROOT_ID,
   SHORTCUTS_OVERLAY_ID,
+  TOAST_ID,
   WITH_SPOILER_CLASS,
   VIDEO_SELECTOR } from './constants'
 import { observeRouteChange } from './utils/routeChangeObserver';
 import { mountShortcutsOverlay } from './components/ShortcutsOverlay';
+import { mountToast } from './components/Toast';
+import { toast } from './utils/toast';
 import { getNoSpoiler, setNoSpoiler } from './utils/settings';
 
 log("🏐🏐🏐")
 
+mountToast(TOAST_ID);
 const shortcutsOverlay = mountShortcutsOverlay(SHORTCUTS_OVERLAY_ID);
 let onPlayerPage = false;
 
@@ -62,6 +66,7 @@ async function toggleSpoilerFree() {
   const next = !(await getNoSpoiler());
   await setNoSpoiler(next);
   handleNoSpoilerChange(next);
+  toast(next ? '🙈 Spoilers hidden' : '👀 Spoilers shown');
   log('toggleSpoilerFree ->', next);
 }
 
@@ -70,6 +75,7 @@ function setupSpoilerFreeToggleListener() {
     if (message.type === 'NO_SPOILER_TOGGLE_STATE_CHANGED') {
       log('NO_SPOILER_TOGGLE_STATE_CHANGED', message.enabled)
       handleNoSpoilerChange(message.enabled);
+      toast(message.enabled ? '🙈 Spoilers hidden' : '👀 Spoilers shown');
     }
   });
 };

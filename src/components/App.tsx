@@ -1,74 +1,41 @@
-import { onCleanup, type Component, createEffect, createSignal, Show } from 'solid-js';
+import { onCleanup, type Component, createEffect, createSignal } from 'solid-js';
 import { useLocation } from '@solidjs/router';
 
 import { PAGE_PATHS, VIDEO_SELECTOR } from '../constants';
 import { log } from '../utils/logger';
 import { VideoController } from './VideoController';
 
-import styles from './App.module.css'
-
+// Owns the VideoController lifecycle on the player page. All visual feedback now
+// goes through the global toast (see utils/toast + components/Toast), so this
+// component renders nothing.
 const App: Component = () => {
-  const [videoController, setVideoController] = createSignal<VideoController | null>(null)
-  const [playbackRate, setPlaybackRate] = createSignal<number>()
-  const [visible, setVisible] = createSignal<boolean>()
-  let visibleTimer: ReturnType<typeof setTimeout>;
+  const [videoController, setVideoController] = createSignal<VideoController | null>(null);
 
   const { pathname } = useLocation();
 
   const cleanup = () => {
     if (videoController()) {
-      videoController()?.cleanup()
-      setVideoController(null)
+      videoController()?.cleanup();
+      setVideoController(null);
     }
-  }
+  };
 
   createEffect(() => {
     if (pathname === PAGE_PATHS.PLAYER) {
       if (!videoController()) {
-        setVideoController(
-          new VideoController({
-            selector: VIDEO_SELECTOR,
-            handlers: {
-              onSetPlaybackRate: (value) => setPlaybackRate(value),
-              onSetVolumn: () => {},
-            }
-          })
-        );
+        setVideoController(new VideoController({ selector: VIDEO_SELECTOR }));
       }
-    } else {
-      if (videoController()) {
-        cleanup()
-      }
+    } else if (videoController()) {
+      cleanup();
     }
-  })
-
-  createEffect(() => {
-    if (playbackRate()) {
-      setVisible(true)
-      if (visibleTimer) {
-        clearTimeout(visibleTimer)
-      }
-      visibleTimer = setTimeout(() => {
-        setVisible(false)
-      }, 2000)
-    }
-  })
-
-  onCleanup(() => {
-    log("App onCleanup");
-    cleanup()
   });
 
-  return (
-    <Show when={!!videoController()}>
-      <div classList={{
-        [styles.wrapper]: true,
-        [styles.visible]: visible(),
-      }}>
-        <div class="playback">{playbackRate() ? `${playbackRate()}x` : null}</div>
-      </div>
-    </Show>
-  );
-}
+  onCleanup(() => {
+    log('App onCleanup');
+    cleanup();
+  });
+
+  return null;
+};
 
 export default App;
