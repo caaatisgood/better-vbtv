@@ -2,7 +2,7 @@
 
 ## Data Collection
 
-The Better VBTV extension does not collect, store, or transmit any personal data. The only data stored is your spoiler-free preference setting (enabled/disabled), which is saved locally in your browser using Chrome's storage API.
+The Better VBTV extension does not collect, store, or transmit any personal data. The only data stored is your spoiler-free preference setting (enabled/disabled) and your watch history (video titles, thumbnails, and last playback positions), both saved locally in your browser using Chrome's storage API. This data never leaves your device.
 
 ## Website Access
 
@@ -24,4 +24,4 @@ The extension may be updated through the Chrome Web Store to improve functionali
 
 For questions or concerns about privacy:
 GitHub: @caaatisgood
-Last updated: Fri Nov 15 2024
+Last updated: Tue Jun 17 2026

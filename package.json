@@ -1,7 +1,7 @@
 {
   "name": "better-vbtv",
   "version": "1.1.0",
-  "description": "Better VBTV — spoiler-free Volleyball World TV with keyboard controls",
+  "description": "Better VBTV — spoiler-free Volleyball World TV with keyboard controls and watch history",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/caaatisgood/better-vbtv.git"
