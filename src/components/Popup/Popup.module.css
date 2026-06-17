@@ -135,7 +135,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 38px;
+  height: 28px;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s ease;
