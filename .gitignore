@@ -4,6 +4,6 @@ dist/
 *.zip
 .gstack/
 .playwright-mcp/
-store-assets/html/
+store-assets/
 __pycache__/
 *.pyc
