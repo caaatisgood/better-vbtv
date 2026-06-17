@@ -1,7 +1,16 @@
 import { log } from "../utils/logger";
 import { getSeekIntervals } from "../utils/settings";
 import { toast } from "../utils/toast";
-import { DEFAULT_SEEK_SMALL, DEFAULT_SEEK_LARGE, SEEK_SMALL_KEY, SEEK_LARGE_KEY } from "../constants";
+import {
+  DEFAULT_SEEK_SMALL,
+  DEFAULT_SEEK_LARGE,
+  SEEK_SMALL_KEY,
+  SEEK_LARGE_KEY,
+  WATCH_QUALIFY_SEC,
+  POSITION_SAVE_SEC,
+} from "../constants";
+import { getEntry, recordView, savePosition } from "../utils/history";
+import { parseJwMediaId, fetchJwMeta, formatTime } from "../utils/videoMeta";
 
 interface PlayerShortcuts {
   seek(seconds: number): void;
@@ -28,6 +37,19 @@ export class VideoController implements PlayerShortcuts {
   private seekLarge: number = DEFAULT_SEEK_LARGE;
   private storageListener: Parameters<typeof chrome.storage.onChanged.addListener>[0] | null = null;
 
+  // --- Watch history / resume tracking ---
+  // VBTV is a SPA: switching videos changes only the `?self-link` query, not the
+  // `/player` pathname, so this controller is NOT recreated per video. We track
+  // the live media id and reset state whenever it changes.
+  private trackedId: string | null = null; // id we're currently recording for
+  private watchQualified: boolean = false; // recorded to history yet?
+  private lastSaveAt: number = 0;          // throttle clock for position writes
+  private seekSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private timeupdateListener: (() => void) | null = null;
+  private seekedListener: (() => void) | null = null;
+  private pauseListener: (() => void) | null = null;
+  private beforeUnloadListener: (() => void) | null = null;
+
   constructor({
     selector,
   }: VideoControllerOptions) {
@@ -36,6 +58,7 @@ export class VideoController implements PlayerShortcuts {
     this.loadSeekIntervals()
     this.watchSeekIntervals()
     this.setupShortcuts()
+    this.setupWatchTracking()
   }
 
   private async loadSeekIntervals(): Promise<void> {
@@ -149,8 +172,162 @@ export class VideoController implements PlayerShortcuts {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Watch history + resume position
+  //
+  // - A video is added to history once it has been played for WATCH_QUALIFY_SEC.
+  // - The resume position is persisted at most once per POSITION_SAVE_SEC during
+  //   continuous playback, plus POSITION_SAVE_SEC after the last scrub, and is
+  //   always flushed on pause / page unload / cleanup.
+  // - On load, if a saved position exists we offer a one-tap "Resume?" prompt.
+  // ---------------------------------------------------------------------------
+  private setupWatchTracking(): void {
+    if (!this.video) {
+      log("unable to setupWatchTracking() because `this.video` does not exist");
+      return;
+    }
+
+    this.trackedId = parseJwMediaId(window.location.href);
+    if (!this.trackedId) {
+      log("setupWatchTracking: no JW media id in URL");
+    } else {
+      void this.maybeOfferResume(this.trackedId);
+    }
+
+    this.timeupdateListener = () => this.onTimeUpdate();
+    this.seekedListener = () => this.scheduleSeekSave();
+    this.pauseListener = () => this.flushPosition();
+    this.beforeUnloadListener = () => this.flushPosition();
+
+    this.video.addEventListener('timeupdate', this.timeupdateListener);
+    this.video.addEventListener('seeked', this.seekedListener);
+    this.video.addEventListener('pause', this.pauseListener);
+    window.addEventListener('beforeunload', this.beforeUnloadListener);
+  }
+
+  private async maybeOfferResume(id: string): Promise<void> {
+    const entry = await getEntry(id);
+    if (!entry || entry.positionSec <= WATCH_QUALIFY_SEC) return;
+    // Skip if effectively finished (within last 15s of a known duration).
+    if (entry.durationSec && entry.positionSec >= entry.durationSec - 15) return;
+    // Bail if the user already moved on to another video.
+    if (parseJwMediaId(window.location.href) !== id) return;
+
+    const pos = entry.positionSec;
+    toast(`Resume from ${formatTime(pos)}?`, {
+      action: {
+        label: 'Resume',
+        onClick: () => {
+          if (this.video && parseJwMediaId(window.location.href) === id) {
+            this.video.currentTime = pos;
+            toast(`▶️ Resumed ${formatTime(pos)}`);
+          }
+        },
+      },
+    });
+  }
+
+  private onTimeUpdate(): void {
+    const video = this.video;
+    if (!video || video.seeking) return;
+
+    // Detect in-player video switches (playlist advance / picking another match).
+    const id = parseJwMediaId(window.location.href);
+    if (id !== this.trackedId) {
+      this.flushPosition();      // save the outgoing video first
+      this.trackedId = id;
+      this.watchQualified = false;
+      this.lastSaveAt = 0;
+      if (id) void this.maybeOfferResume(id);
+      return;
+    }
+    if (!id) return;
+
+    // Qualify: first time we cross the threshold, record to history.
+    if (!this.watchQualified && video.currentTime >= WATCH_QUALIFY_SEC) {
+      this.watchQualified = true;
+      void this.qualifyAndRecord(id);
+      return;
+    }
+
+    // Throttle position writes while playing.
+    if (this.watchQualified && !video.paused) {
+      const now = Date.now();
+      if (now - this.lastSaveAt >= POSITION_SAVE_SEC * 1000) {
+        this.flushPosition();
+      }
+    }
+  }
+
+  private async qualifyAndRecord(id: string): Promise<void> {
+    if (!this.video) return;
+    const url = window.location.href;
+    const positionSec = this.video.currentTime;
+    const durationSec = Number.isFinite(this.video.duration) ? this.video.duration : 0;
+    this.lastSaveAt = Date.now();
+
+    // Record immediately with a fallback title so the entry exists even if the
+    // metadata fetch is slow or fails; refine with real title/poster after.
+    await recordView({
+      id,
+      title: document.title || 'VBTV replay',
+      url,
+      positionSec,
+      durationSec,
+    });
+
+    const meta = await fetchJwMeta(id);
+    // Don't clobber a newer entry if the user already switched videos.
+    if (meta && this.trackedId === id) {
+      await recordView({
+        id,
+        title: meta.title,
+        thumbnail: meta.thumbnail,
+        url,
+        positionSec: this.video?.currentTime ?? positionSec,
+        durationSec: Number.isFinite(this.video?.duration ?? NaN)
+          ? (this.video as HTMLVideoElement).duration
+          : durationSec,
+      });
+    }
+  }
+
+  // Persist the position POSITION_SAVE_SEC after the last scrub ("progress nav").
+  private scheduleSeekSave(): void {
+    if (!this.watchQualified) return;
+    if (this.seekSaveTimer) clearTimeout(this.seekSaveTimer);
+    this.seekSaveTimer = setTimeout(() => this.flushPosition(), POSITION_SAVE_SEC * 1000);
+  }
+
+  private flushPosition(): void {
+    if (this.seekSaveTimer) {
+      clearTimeout(this.seekSaveTimer);
+      this.seekSaveTimer = null;
+    }
+    if (!this.trackedId || !this.watchQualified || !this.video) return;
+    this.lastSaveAt = Date.now();
+    const durationSec = Number.isFinite(this.video.duration) ? this.video.duration : undefined;
+    void savePosition(this.trackedId, this.video.currentTime, durationSec);
+  }
+
   public cleanup(): void {
     log("VideoController.cleanup()")
+    // Persist final position before tearing down listeners.
+    this.flushPosition();
+
+    if (this.video) {
+      if (this.timeupdateListener) this.video.removeEventListener('timeupdate', this.timeupdateListener);
+      if (this.seekedListener) this.video.removeEventListener('seeked', this.seekedListener);
+      if (this.pauseListener) this.video.removeEventListener('pause', this.pauseListener);
+    }
+    if (this.beforeUnloadListener) {
+      window.removeEventListener('beforeunload', this.beforeUnloadListener);
+    }
+    this.timeupdateListener = null;
+    this.seekedListener = null;
+    this.pauseListener = null;
+    this.beforeUnloadListener = null;
+
     // Remove event listeners
     if (this.keydownListener) {
       document.removeEventListener('keydown', this.keydownListener);

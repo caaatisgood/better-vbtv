@@ -24,3 +24,26 @@
 .toast.shown {
   opacity: 1;
 }
+
+/* Interactive prompts (Resume?) need to receive clicks. */
+.toast.interactive {
+  pointer-events: auto;
+}
+
+.action {
+  margin-left: 0.2em;
+  padding: 0.25em 0.7em;
+  border: none;
+  border-radius: 9999px;
+  background: #818cf8;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85em;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.action:hover {
+  background: #6366f1;
+}

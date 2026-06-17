@@ -100,6 +100,159 @@
   white-space: nowrap;
 }
 
+.historyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clearAll {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.clearAll:hover {
+  color: #ef4444;
+}
+
+.empty {
+  color: #6b7280;
+  font-size: 0.78rem;
+}
+
+.historyWrap {
+  position: relative;
+}
+
+/* Fade hints — only opaque when there is more to scroll that direction. */
+.historyWrap::before,
+.historyWrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 38px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+
+.historyWrap::before {
+  top: 0;
+  background: linear-gradient(to bottom, #18181b 30%, rgba(24, 24, 27, 0.6) 65%, rgba(24, 24, 27, 0));
+}
+
+.historyWrap::after {
+  bottom: 0;
+  background: linear-gradient(to top, #18181b 30%, rgba(24, 24, 27, 0.6) 65%, rgba(24, 24, 27, 0));
+}
+
+.historyWrap.showTop::before {
+  opacity: 1;
+}
+
+.historyWrap.showBottom::after {
+  opacity: 1;
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  /* ~5 rows (~49px each incl. gap) before scrolling */
+  max-height: 245px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.historyRow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.3rem;
+  border-radius: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.historyRow:hover {
+  background: #27272a;
+}
+
+.thumb {
+  position: relative;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 36px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #27272a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbFallback {
+  font-size: 1rem;
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: #818cf8;
+}
+
+.historyMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.historyTitle {
+  font-size: 0.78rem;
+  color: #e4e4e7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historySub {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
+.remove {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.2rem;
+}
+
+.remove:hover {
+  color: #ef4444;
+}
+
 .shortcuts {
   display: flex;
   flex-direction: column;

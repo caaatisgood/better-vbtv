@@ -17,3 +17,14 @@ export const DEFAULT_SEEK_LARGE = 10
 // Toast appearance
 export const TOAST_FONT_SIZE_KEY = 'TOAST_FONT_SIZE'
 export const DEFAULT_TOAST_FONT_SIZE = 16
+
+// Watch history + resume
+export const WATCH_HISTORY_KEY = 'WATCH_HISTORY'
+// Min continuous playtime (seconds) before a video is recorded to history.
+export const WATCH_QUALIFY_SEC = 5
+// Throttle/debounce for persisting the resume position (seconds).
+export const POSITION_SAVE_SEC = 5
+// Cap the stored list so storage can't grow unbounded.
+export const HISTORY_MAX_ENTRIES = 100
+// Public JW Player delivery feed — returns title + poster for a media id, no auth.
+export const JW_MEDIA_FEED = 'https://cdn.jwplayer.com/v2/media/'

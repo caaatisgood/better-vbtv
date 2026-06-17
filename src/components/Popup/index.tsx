@@ -1,8 +1,14 @@
 // src/Popup.tsx
-import { createSignal, onMount, onCleanup, For } from 'solid-js';
+import { createSignal, createEffect, onMount, onCleanup, For, Show } from 'solid-js';
 import { Switch } from '../Switch';
 import styles from './Popup.module.css';
-import { NO_SPOILER_STORAGE_KEY, DEFAULT_SEEK_SMALL, DEFAULT_SEEK_LARGE, DEFAULT_TOAST_FONT_SIZE } from '../../constants';
+import {
+  NO_SPOILER_STORAGE_KEY,
+  DEFAULT_SEEK_SMALL,
+  DEFAULT_SEEK_LARGE,
+  DEFAULT_TOAST_FONT_SIZE,
+  WATCH_HISTORY_KEY,
+} from '../../constants';
 import {
   getNoSpoiler,
   setNoSpoiler,
@@ -17,6 +23,8 @@ import {
   TOAST_FONT_MIN,
   TOAST_FONT_MAX,
 } from '../../utils/settings';
+import { getHistory, removeEntry, clearHistory, type HistoryEntry } from '../../utils/history';
+import { formatTime, formatAgo } from '../../utils/videoMeta';
 import { log } from '../../utils/logger';
 
 const SHORTCUTS: { keys: string; label: string }[] = [
@@ -36,6 +44,25 @@ const Popup = () => {
   const [small, setSmall] = createSignal(DEFAULT_SEEK_SMALL);
   const [large, setLarge] = createSignal(DEFAULT_SEEK_LARGE);
   const [fontSize, setFontSize] = createSignal(DEFAULT_TOAST_FONT_SIZE);
+  const [history, setHistory] = createSignal<HistoryEntry[]>([]);
+
+  // Scroll affordance: fade hints show only when more rows exist that direction.
+  const [canScrollUp, setCanScrollUp] = createSignal(false);
+  const [canScrollDown, setCanScrollDown] = createSignal(false);
+  let scrollEl: HTMLDivElement | undefined;
+
+  const updateScrollHints = () => {
+    const el = scrollEl;
+    if (!el) return;
+    setCanScrollUp(el.scrollTop > 1);
+    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+  };
+
+  // Recompute after the list re-renders (entries added/removed).
+  createEffect(() => {
+    history();
+    requestAnimationFrame(updateScrollHints);
+  });
 
   onMount(async () => {
     setIsEnabled(await getNoSpoiler());
@@ -43,12 +70,17 @@ const Popup = () => {
     setSmall(iv.small);
     setLarge(iv.large);
     setFontSize(await getToastFontSize());
+    setHistory(await getHistory());
 
     // Reflect changes made elsewhere (e.g. the "s" hotkey on the page).
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
       if (changes[NO_SPOILER_STORAGE_KEY]) {
         setIsEnabled((changes[NO_SPOILER_STORAGE_KEY].newValue as boolean | undefined) ?? true);
+      }
+      // Live-refresh the list as videos are watched on the page.
+      if (changes[WATCH_HISTORY_KEY]) {
+        void getHistory().then(setHistory);
       }
     });
 
@@ -96,6 +128,27 @@ const Popup = () => {
     await setToastFontSize(size);
   };
 
+  const openVideo = (entry: HistoryEntry) => {
+    chrome.tabs.create({ url: entry.url });
+    window.close();
+  };
+
+  const handleRemove = async (e: MouseEvent, id: string) => {
+    e.stopPropagation();
+    setHistory((h) => h.filter((x) => x.id !== id)); // optimistic
+    await removeEntry(id);
+  };
+
+  const handleClearAll = async () => {
+    setHistory([]);
+    await clearHistory();
+  };
+
+  const progressPct = (entry: HistoryEntry) =>
+    entry.durationSec > 0
+      ? Math.min(100, Math.round((entry.positionSec / entry.durationSec) * 100))
+      : 0;
+
   return (
     <div class={styles.popup}>
       <h1 class={styles.title}>Better VBTV</h1>
@@ -113,6 +166,74 @@ const Popup = () => {
             : <>👀&nbsp;<span>Spoilers will be shown normally</span></>
           }
         </p>
+      </div>
+
+      <hr class={styles.divider} />
+
+      <div class={styles.section}>
+        <div class={styles.historyHeader}>
+          <p class={styles.sectionTitle}>Watch history</p>
+          <Show when={history().length > 0}>
+            <button class={styles.clearAll} onClick={handleClearAll}>Clear all</button>
+          </Show>
+        </div>
+        <Show
+          when={history().length > 0}
+          fallback={<p class={styles.empty}>Replays you watch show up here.</p>}
+        >
+          <div
+            class={styles.historyWrap}
+            classList={{ [styles.showTop]: canScrollUp(), [styles.showBottom]: canScrollDown() }}
+          >
+          <div class={styles.history} ref={scrollEl} onScroll={updateScrollHints}>
+            <For each={history()}>
+              {(entry) => (
+                <div class={styles.historyRow} onClick={() => openVideo(entry)} title={entry.title}>
+                  <div class={styles.thumb}>
+                    <Show when={entry.thumbnail} fallback={<span class={styles.thumbFallback}>🏐</span>}>
+                      <img src={entry.thumbnail} alt="" loading="lazy" />
+                    </Show>
+                    <Show when={progressPct(entry) > 0}>
+                      <span class={styles.progress} style={{ width: `${progressPct(entry)}%` }} />
+                    </Show>
+                  </div>
+                  <div class={styles.historyMeta}>
+                    <span class={styles.historyTitle}>{entry.title}</span>
+                    <span class={styles.historySub}>
+                      {formatTime(entry.positionSec)} · {formatAgo(entry.updatedAt)}
+                    </span>
+                  </div>
+                  <button
+                    class={styles.remove}
+                    title="Remove"
+                    onClick={(e) => handleRemove(e, entry.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </For>
+          </div>
+          </div>
+        </Show>
+      </div>
+
+      <hr class={styles.divider} />
+
+      <div class={styles.section}>
+        <p class={styles.sectionTitle}>
+          Keyboard shortcuts <span class={styles.hint}>press <kbd>?</kbd> on VBTV</span>
+        </p>
+        <div class={styles.shortcuts}>
+          <For each={SHORTCUTS}>
+            {(s) => (
+              <div class={styles.shortcutRow}>
+                <kbd>{s.keys}</kbd>
+                <span>{s.label}</span>
+              </div>
+            )}
+          </For>
+        </div>
       </div>
 
       <hr class={styles.divider} />
@@ -158,24 +279,6 @@ const Popup = () => {
         <div class={styles.field}>
           <span class={styles.hint}>Preview</span>
           <span class={styles.toastPreview} style={{ 'font-size': `${fontSize()}px` }}>⏩ +{small()}s</span>
-        </div>
-      </div>
-
-      <hr class={styles.divider} />
-
-      <div class={styles.section}>
-        <p class={styles.sectionTitle}>
-          Keyboard shortcuts <span class={styles.hint}>press <kbd>?</kbd> on VBTV</span>
-        </p>
-        <div class={styles.shortcuts}>
-          <For each={SHORTCUTS}>
-            {(s) => (
-              <div class={styles.shortcutRow}>
-                <kbd>{s.keys}</kbd>
-                <span>{s.label}</span>
-              </div>
-            )}
-          </For>
         </div>
       </div>
 

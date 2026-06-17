@@ -1,11 +1,13 @@
 import { render } from 'solid-js/web';
-import { createSignal } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import styles from './Toast.module.css';
-import { registerToast } from '../../utils/toast';
+import { registerToast, type ToastAction } from '../../utils/toast';
 import { getToastFontSize, clampFont } from '../../utils/settings';
 import { TOAST_FONT_SIZE_KEY, DEFAULT_TOAST_FONT_SIZE } from '../../constants';
 
 const VISIBLE_MS = 1300;
+// Interactive prompts (e.g. "Resume?") need long enough to click.
+const ACTION_VISIBLE_MS = 7000;
 
 export function mountToast(rootId: string): void {
   let host = document.getElementById(rootId);
@@ -17,6 +19,7 @@ export function mountToast(rootId: string): void {
 
   const [msg, setMsg] = createSignal('');
   const [shown, setShown] = createSignal(false);
+  const [action, setAction] = createSignal<ToastAction | null>(null);
   const [fontSize, setFontSize] = createSignal(DEFAULT_TOAST_FONT_SIZE);
   let el: HTMLDivElement | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -28,8 +31,11 @@ export function mountToast(rootId: string): void {
     }
   });
 
-  const show = (message: string) => {
+  const hide = () => setShown(false);
+
+  const show = (message: string, opts?: { action?: ToastAction; durationMs?: number }) => {
     setMsg(message);
+    setAction(opts?.action ?? null);
     setShown(true);
 
     // Keep the toast painted above a fullscreen player.
@@ -47,7 +53,8 @@ export function mountToast(rootId: string): void {
     );
 
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => setShown(false), VISIBLE_MS);
+    const life = opts?.durationMs ?? (opts?.action ? ACTION_VISIBLE_MS : VISIBLE_MS);
+    timer = setTimeout(hide, life);
   };
 
   registerToast(show);
@@ -56,10 +63,23 @@ export function mountToast(rootId: string): void {
     () => (
       <div
         ref={el}
-        classList={{ [styles.toast]: true, [styles.shown]: shown() }}
+        classList={{ [styles.toast]: true, [styles.shown]: shown(), [styles.interactive]: !!action() }}
         style={{ 'font-size': `${fontSize()}px` }}
       >
-        {msg()}
+        <span>{msg()}</span>
+        <Show when={action()}>
+          {(a) => (
+            <button
+              class={styles.action}
+              onClick={() => {
+                hide();
+                a().onClick();
+              }}
+            >
+              {a().label}
+            </button>
+          )}
+        </Show>
       </div>
     ),
     host,
