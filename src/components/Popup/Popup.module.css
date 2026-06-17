@@ -135,7 +135,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 22px;
+  height: 38px;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -144,12 +144,12 @@
 
 .historyWrap::before {
   top: 0;
-  background: linear-gradient(to bottom, #18181b, rgba(24, 24, 27, 0));
+  background: linear-gradient(to bottom, #18181b 30%, rgba(24, 24, 27, 0.6) 65%, rgba(24, 24, 27, 0));
 }
 
 .historyWrap::after {
   bottom: 0;
-  background: linear-gradient(to top, #18181b, rgba(24, 24, 27, 0));
+  background: linear-gradient(to top, #18181b 30%, rgba(24, 24, 27, 0.6) 65%, rgba(24, 24, 27, 0));
 }
 
 .historyWrap.showTop::before {
