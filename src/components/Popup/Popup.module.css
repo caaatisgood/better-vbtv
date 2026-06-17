@@ -1,6 +1,6 @@
 /* src/Popup.module.css */
 .popup {
-  font-family: ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  font-family: var(--font-body);
   padding: 1rem;
   font-size: 1rem;
   width: 320px;
@@ -11,10 +11,18 @@
 }
 
 .title {
+  font-family: var(--font-display);
   font-weight: 400;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  letter-spacing: 0.01em;
   margin: 0;
   margin-bottom: 1.25rem;
+}
+
+/* "spoiler-free mode" toggle label — branded like the section headings */
+.toggleLabel {
+  font-family: var(--font-display);
+  text-transform: lowercase;
 }
 
 .toggleRow {
@@ -58,11 +66,18 @@
 }
 
 .sectionTitle {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  text-transform: lowercase;
+  letter-spacing: 0.01em;
   color: #818cf8;
   margin: 0 0 0.25rem 0;
+}
+
+/* Inline hints inside a heading stay in the readable body font, normal case */
+.sectionTitle .hint {
+  font-family: var(--font-body);
+  text-transform: none;
 }
 
 .field {

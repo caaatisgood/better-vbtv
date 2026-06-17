@@ -155,7 +155,7 @@ const Popup = () => {
 
       <div class={styles.toggleRow}>
         <p>
-          Spoiler-free mode <span class={styles.hint}>press <kbd>s</kbd></span>
+          <span class={styles.toggleLabel}>Spoiler-free mode</span> <span class={styles.hint}>press <kbd>s</kbd></span>
         </p>
         <Switch checked={isEnabled()} onChange={handleToggle} />
       </div>
