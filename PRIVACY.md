@@ -8,13 +8,18 @@ The Better VBTV extension does not collect, store, or transmit any personal data
 
 This extension only runs on tv.volleyballworld.com
 It only modifies the visual display of video durations and player controls
-No data is sent to external servers
+No browsing, viewing, or personal data is sent to external servers
 No analytics or tracking is implemented
 
 ## Third-Party Services
 
-No other external services or third-party code is used
-No data is shared with any third parties
+The settings popup loads its fonts (Geo and Inter) from Google Fonts
+(fonts.googleapis.com and fonts.gstatic.com). When the popup opens, your
+browser requests these font files from Google's servers, which means Google
+may receive standard request metadata such as your IP address and user agent,
+as described in Google's privacy policy (https://policies.google.com/privacy).
+No personal data, browsing activity, or watch history is ever sent to Google
+or any other third party.
 
 ## Updates
 
