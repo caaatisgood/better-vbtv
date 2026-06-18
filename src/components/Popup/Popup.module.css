@@ -10,12 +10,20 @@
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 1.5rem;
   letter-spacing: 0.01em;
   margin: 0;
   margin-bottom: 1.25rem;
+}
+
+.logo {
+  flex: none;
+  border-radius: 6px;
 }
 
 /* "spoiler-free mode" toggle label — branded like the section headings */

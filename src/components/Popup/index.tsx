@@ -2,6 +2,7 @@
 import { createSignal, createEffect, onMount, onCleanup, For, Show } from 'solid-js';
 import { Switch } from '../Switch';
 import styles from './Popup.module.css';
+import logoUrl from '../../../icons/icon-128.png';
 import {
   NO_SPOILER_STORAGE_KEY,
   DEFAULT_SEEK_SMALL,
@@ -151,7 +152,10 @@ const Popup = () => {
 
   return (
     <div class={styles.popup}>
-      <h1 class={styles.title}>Better VBTV</h1>
+      <h1 class={styles.title}>
+        <img class={styles.logo} src={logoUrl} alt="" width="28" height="28" />
+        Better VBTV
+      </h1>
 
       <div class={styles.toggleRow}>
         <p>
