@@ -34,6 +34,10 @@ Seek step sizes and toast font size are configurable in the popup.
 
 ## Install
 
+### From the Chrome Web Store
+
+Install **Better VBTV** directly: https://chromewebstore.google.com/detail/better-vbtv/hfmjokcmjjoabfiikfgonfbnmmbakgfj
+
 ### From source
 
 ```bash
