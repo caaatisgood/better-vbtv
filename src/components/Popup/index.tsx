@@ -288,9 +288,8 @@ const Popup = () => {
 
       <hr class={styles.divider} />
       <div class={styles.footer}>
-        <p>created by caaatisgood</p>
-        <p><a href="https://github.com/caaatisgood/better-vbtv/issues/new" target="_blank">feedback or bug reports 💬</a></p>
-        <p><a href="https://buymeacoffee.com/caaatisgood" target="_blank">buy me a coffee ☕</a></p>
+        <p><a href="https://github.com/caaatisgood/better-vbtv/issues/new" target="_blank">feedback or bug reports 👾</a></p>
+        <p>“building this extension takes longer than a minus-tempo quick. <a href="https://buymeacoffee.com/caaatisgood" target="_blank">buy caaatisgood a coffee ☕</a> to keep the rallies going.”</p>
       </div>
     </div>
   );
