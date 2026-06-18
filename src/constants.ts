@@ -16,7 +16,7 @@ export const DEFAULT_SEEK_LARGE = 10
 
 // Toast appearance
 export const TOAST_FONT_SIZE_KEY = 'TOAST_FONT_SIZE'
-export const DEFAULT_TOAST_FONT_SIZE = 16
+export const DEFAULT_TOAST_FONT_SIZE = 12
 
 // Watch history + resume
 export const WATCH_HISTORY_KEY = 'WATCH_HISTORY'

@@ -11,6 +11,12 @@ export interface ToastOptions {
   action?: ToastAction;
   // Override the auto-hide delay (ms). Action toasts default to a longer life.
   durationMs?: number;
+  // Disable auto-hide and render an "×" close button; the toast stays until the
+  // user dismisses it (or it is replaced by another toast).
+  dismissible?: boolean;
+  // Called when a dismissible toast is closed (× button or replacement), but NOT
+  // when its action button is clicked. Used to re-enable history writes.
+  onDismiss?: () => void;
 }
 
 type ToastFn = (message: string, opts?: ToastOptions) => void;

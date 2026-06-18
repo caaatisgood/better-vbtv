@@ -43,6 +43,7 @@ export class VideoController implements PlayerShortcuts {
   // the live media id and reset state whenever it changes.
   private trackedId: string | null = null; // id we're currently recording for
   private watchQualified: boolean = false; // recorded to history yet?
+  private resumePromptActive: boolean = false; // resume toast still showing for trackedId?
   private lastSaveAt: number = 0;          // throttle clock for position writes
   private seekSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private timeupdateListener: (() => void) | null = null;
@@ -214,10 +215,17 @@ export class VideoController implements PlayerShortcuts {
     if (parseJwMediaId(window.location.href) !== id) return;
 
     const pos = entry.positionSec;
+    // Freeze history writes for this video until the user acts on the prompt.
+    this.resumePromptActive = true;
     toast(`Resume from ${formatTime(pos)}?`, {
+      dismissible: true,
+      onDismiss: () => {
+        this.resumePromptActive = false;
+      },
       action: {
         label: 'Resume',
         onClick: () => {
+          this.resumePromptActive = false;
           if (this.video && parseJwMediaId(window.location.href) === id) {
             this.video.currentTime = pos;
             toast(`▶️ Resumed ${formatTime(pos)}`);
@@ -237,11 +245,15 @@ export class VideoController implements PlayerShortcuts {
       this.flushPosition();      // save the outgoing video first
       this.trackedId = id;
       this.watchQualified = false;
+      this.resumePromptActive = false; // cleared; re-armed by maybeOfferResume if it prompts
       this.lastSaveAt = 0;
       if (id) void this.maybeOfferResume(id);
       return;
     }
     if (!id) return;
+
+    // Resume prompt still showing — leave this video's history untouched.
+    if (this.resumePromptActive) return;
 
     // Qualify: first time we cross the threshold, record to history.
     if (!this.watchQualified && video.currentTime >= WATCH_QUALIFY_SEC) {
@@ -305,6 +317,8 @@ export class VideoController implements PlayerShortcuts {
       this.seekSaveTimer = null;
     }
     if (!this.trackedId || !this.watchQualified || !this.video) return;
+    // Don't overwrite the saved position while the resume prompt is still up.
+    if (this.resumePromptActive) return;
     this.lastSaveAt = Date.now();
     const durationSec = Number.isFinite(this.video.duration) ? this.video.duration : undefined;
     void savePosition(this.trackedId, this.video.currentTime, durationSec);
