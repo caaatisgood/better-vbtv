@@ -290,6 +290,7 @@ const Popup = () => {
       <div class={styles.footer}>
         <p>created by caaatisgood</p>
         <p><a href="https://github.com/caaatisgood/better-vbtv/issues/new" target="_blank">feedback or bug reports 💬</a></p>
+        <p><a href="https://buymeacoffee.com/caaatisgood" target="_blank">buy me a coffee ☕</a></p>
       </div>
     </div>
   );
