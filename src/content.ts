@@ -14,6 +14,7 @@ import { mountShortcutsOverlay } from './components/ShortcutsOverlay';
 import { mountToast } from './components/Toast';
 import { toast } from './utils/toast';
 import { getNoSpoiler, setNoSpoiler } from './utils/settings';
+import ext from './utils/browser';
 
 log("🏐🏐🏐")
 
@@ -71,7 +72,7 @@ async function toggleSpoilerFree() {
 }
 
 function setupSpoilerFreeToggleListener() {
-  chrome.runtime.onMessage.addListener((message) => {
+  ext.runtime.onMessage.addListener((message) => {
     if (message.type === 'NO_SPOILER_TOGGLE_STATE_CHANGED') {
       log('NO_SPOILER_TOGGLE_STATE_CHANGED', message.enabled)
       handleNoSpoilerChange(message.enabled);

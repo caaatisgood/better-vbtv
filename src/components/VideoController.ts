@@ -11,6 +11,7 @@ import {
 } from "../constants";
 import { getEntry, recordView, savePosition } from "../utils/history";
 import { parseJwMediaId, fetchJwMeta, formatTime } from "../utils/videoMeta";
+import ext from "../utils/browser";
 
 interface PlayerShortcuts {
   seek(seconds: number): void;
@@ -75,7 +76,7 @@ export class VideoController implements PlayerShortcuts {
         this.loadSeekIntervals()
       }
     }
-    chrome.storage.onChanged.addListener(this.storageListener)
+    ext.storage.onChanged.addListener(this.storageListener)
   }
 
   private getVideo() {
@@ -350,7 +351,7 @@ export class VideoController implements PlayerShortcuts {
 
     // Remove storage listener
     if (this.storageListener) {
-      chrome.storage.onChanged.removeListener(this.storageListener);
+      ext.storage.onChanged.removeListener(this.storageListener);
       this.storageListener = null;
     }
 

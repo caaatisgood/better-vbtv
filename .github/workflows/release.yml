@@ -1,0 +1,165 @@
+name: Release
+
+# Publishes the extension to the web stores when a GitHub Release is published.
+# The release tag drives the version (e.g. tag `v1.2` -> manifest version 1.2).
+#
+# Chrome / Edge / Opera all ship the same Chromium build (dist/); Firefox ships
+# the Gecko build (dist-firefox/). Chrome, Edge, and Firefox are auto-submitted
+# for review; Opera has no API, so its package is attached to the release for
+# manual upload. The store jobs each no-op if their secrets are not configured,
+# so the workflow stays green before credentials are added.
+#
+# Required repository secrets (configure under Settings -> Secrets -> Actions):
+#   Chrome Web Store: CHROME_EXTENSION_ID, CHROME_CLIENT_ID, CHROME_CLIENT_SECRET, CHROME_REFRESH_TOKEN
+#   Edge Add-ons:     EDGE_PRODUCT_ID, EDGE_CLIENT_ID, EDGE_API_KEY
+#   Firefox (AMO):    AMO_JWT_ISSUER, AMO_JWT_SECRET
+#   Opera:            none — no publishing API; upload the release asset by hand.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (e.g. 1.2). Defaults to the latest tag."
+        required: false
+
+permissions:
+  contents: write # attach packaged zips to the release
+
+env:
+  # Release tag on a release event, else the manual input.
+  EXT_VERSION: ${{ github.event.release.tag_name || github.event.inputs.version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build Chromium (Chrome / Edge / Opera) and Firefox
+        run: |
+          pnpm build
+          pnpm build:firefox
+
+      - name: Lint the Firefox build
+        run: pnpm dlx web-ext lint --source-dir dist-firefox --self-hosted
+
+      - name: Package
+        run: |
+          ( cd dist && zip -r -FS ../better-vbtv-chromium.zip . )
+          ( cd dist-firefox && zip -r -FS ../better-vbtv-firefox.zip . )
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-packages
+          path: |
+            better-vbtv-chromium.zip
+            better-vbtv-firefox.zip
+
+      - name: Attach packages to the release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            better-vbtv-chromium.zip
+            better-vbtv-firefox.zip
+
+  chrome:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: store-release # optional: add required reviewers for a manual gate
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-packages
+      - name: Submit to Chrome Web Store
+        if: ${{ secrets.CHROME_REFRESH_TOKEN != '' }}
+        env:
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        # `--auto-publish` uploads the new version and submits it; Chrome
+        # publishes automatically once review passes.
+        run: pnpm dlx chrome-webstore-upload-cli@3 upload --source better-vbtv-chromium.zip --auto-publish
+
+  edge:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: store-release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-packages
+      - name: Upload & submit to Edge Add-ons
+        if: ${{ secrets.EDGE_API_KEY != '' }}
+        env:
+          PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          API_KEY: ${{ secrets.EDGE_API_KEY }}
+        # Pushes the package into the product's draft, then submits the draft
+        # for review/publication.
+        run: |
+          set -euo pipefail
+          base="https://api.addons.microsoftedge.microsoft.com/v1/products/$PRODUCT_ID/submissions"
+          auth=(-H "Authorization: ApiKey $API_KEY" -H "X-ClientID: $CLIENT_ID")
+
+          echo "Uploading package..."
+          op=$(curl -fsS -D - -o /dev/null -X POST "$base/draft/package" \
+            "${auth[@]}" -H "Content-Type: application/zip" \
+            --data-binary @better-vbtv-chromium.zip \
+            | tr -d '\r' | awk '/^[Ll]ocation:/ {print $2}')
+          echo "Upload operation: $op"
+
+          poll() { # $1=operation status URL
+            for _ in $(seq 1 30); do
+              sleep 10
+              status=$(curl -fsS "$1" "${auth[@]}" | tr -d '\r')
+              echo "$status"
+              case "$status" in
+                *'"status":"Succeeded"'*) return 0 ;;
+                *'"status":"Failed"'*)    return 1 ;;
+              esac
+            done
+            echo "Timed out polling $1"; return 1
+          }
+          poll "$base/draft/package/operations/$op"
+
+          echo "Submitting draft for review..."
+          sub=$(curl -fsS -D - -o /dev/null -X POST "$base" \
+            "${auth[@]}" -H "Content-Type: application/json" \
+            -d '{"notes":"Automated submission from CI."}' \
+            | tr -d '\r' | awk '/^[Ll]ocation:/ {print $2}')
+          echo "Submission operation: $sub"
+          poll "$base/operations/$sub"
+          echo "Edge submission complete."
+
+  firefox:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: store-release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-packages
+      - run: mkdir -p dist-firefox && unzip -o better-vbtv-firefox.zip -d dist-firefox
+      # Signs and submits the listed version to AMO for review.
+      - name: Sign & submit to AMO (listed)
+        if: ${{ secrets.AMO_JWT_SECRET != '' }}
+        run: >-
+          pnpm dlx web-ext sign
+          --source-dir dist-firefox
+          --channel listed
+          --api-key "${{ secrets.AMO_JWT_ISSUER }}"
+          --api-secret "${{ secrets.AMO_JWT_SECRET }}"

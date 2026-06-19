@@ -1,4 +1,5 @@
 import { WATCH_HISTORY_KEY, HISTORY_MAX_ENTRIES } from '../constants';
+import ext from './browser';
 
 export interface HistoryEntry {
   id: string;          // JW media id — stable per-video key
@@ -15,12 +16,12 @@ export interface HistoryEntry {
 type HistoryMap = Record<string, HistoryEntry>;
 
 async function readMap(): Promise<HistoryMap> {
-  const result = await chrome.storage.local.get([WATCH_HISTORY_KEY]);
+  const result = await ext.storage.local.get([WATCH_HISTORY_KEY]);
   return (result[WATCH_HISTORY_KEY] as HistoryMap | undefined) ?? {};
 }
 
 async function writeMap(map: HistoryMap): Promise<void> {
-  await chrome.storage.local.set({ [WATCH_HISTORY_KEY]: map });
+  await ext.storage.local.set({ [WATCH_HISTORY_KEY]: map });
 }
 
 export async function getHistory(): Promise<HistoryEntry[]> {
