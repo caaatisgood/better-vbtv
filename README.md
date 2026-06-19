@@ -71,13 +71,13 @@ pnpm dev:firefox   # Firefox: vite dev server with HMR
 
 Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/release.yml). Cut a **GitHub Release** with a `vX.Y` tag and the workflow builds both targets, names the version from the tag, attaches the packaged zips to the release, and pushes to each store.
 
-Chrome, Edge, and Opera all ship the same Chromium build (`dist/`); Firefox ships the Gecko build (`dist-firefox/`). Each store job no-ops until its secrets exist, and the store jobs run in a `store-release` GitHub Environment so you can require a manual approval before anything is uploaded.
+Chrome, Edge, and Opera all ship the same Chromium build (`dist/`); Firefox ships the Gecko build (`dist-firefox/`). Each store job no-ops until its secrets exist. The store jobs run in an optional `store-release` GitHub Environment — leave it unprotected for hands-off releases, or add required reviewers there if you ever want a manual gate.
 
 | Store | Automated? | Secrets / setup |
 |-------|-----------|-----------------|
-| **Chrome Web Store** | Uploads a **draft** | `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN` ([API setup](https://developer.chrome.com/docs/webstore/using-api)) |
-| **Edge Add-ons** | Uploads to **draft** | `EDGE_PRODUCT_ID`, `EDGE_CLIENT_ID`, `EDGE_API_KEY` (Partner Center → Publish API) |
-| **Firefox (AMO)** | Signs & **submits for review** (gated by approval) | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` ([API keys](https://addons.mozilla.org/developers/addon/api/key/)) |
+| **Chrome Web Store** | **Submits for review** (auto-publishes when approved) | `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN` ([API setup](https://developer.chrome.com/docs/webstore/using-api)) |
+| **Edge Add-ons** | Uploads & **submits for review** | `EDGE_PRODUCT_ID`, `EDGE_CLIENT_ID`, `EDGE_API_KEY` (Partner Center → Publish API) |
+| **Firefox (AMO)** | Signs & **submits for review** | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` ([API keys](https://addons.mozilla.org/developers/addon/api/key/)) |
 | **Opera** | Manual — no API | Upload the `better-vbtv-chromium.zip` release asset at the [Opera dashboard](https://addons.opera.com/developer/) |
 
 ### What else you need to publish on Firefox
