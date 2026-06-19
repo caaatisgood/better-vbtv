@@ -14,6 +14,7 @@
   "scripts": {
     "dev": "vite dev",
     "dev:firefox": "BROWSER=firefox vite dev",
+    "start:firefox": "web-ext run --source-dir dist-firefox --start-url https://tv.volleyballworld.com",
     "build": "vite build",
     "build:firefox": "BROWSER=firefox vite build",
     "zip": "bestzip extension.zip dist/*",
