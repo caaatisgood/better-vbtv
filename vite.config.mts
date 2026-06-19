@@ -4,21 +4,29 @@ import { crx } from '@crxjs/vite-plugin'
 import baseManifest from './manifest.json'
 
 // Target browser, selected via `BROWSER=firefox`. Defaults to Chrome.
+// Chrome, Edge, and Opera are all Chromium and share the "chrome" build.
 const browser = process.env.BROWSER === 'firefox' ? 'firefox' : 'chrome';
 
-// Firefox needs an explicit add-on id (and minimum version that supports MV3).
-// Chrome ignores `browser_specific_settings`, so we only add it for Firefox.
-const manifest = browser === 'firefox'
-  ? {
-      ...baseManifest,
-      browser_specific_settings: {
-        gecko: {
-          id: 'better-vbtv@caaatisgood',
-          strict_min_version: '115.0',
+// In CI the release tag drives the published version (e.g. `v1.2` -> `1.2`),
+// overriding manifest.json. Locally, manifest.json's value is used.
+const version = process.env.EXT_VERSION?.replace(/^v/, '');
+
+const manifest = {
+  ...baseManifest,
+  ...(version ? { version } : {}),
+  // Firefox needs an explicit add-on id (and a minimum version that supports
+  // MV3). Chrome/Edge/Opera ignore `browser_specific_settings`.
+  ...(browser === 'firefox'
+    ? {
+        browser_specific_settings: {
+          gecko: {
+            id: 'better-vbtv@caaatisgood',
+            strict_min_version: '115.0',
+          },
         },
-      },
-    }
-  : baseManifest;
+      }
+    : {}),
+};
 
 export default defineConfig({
   plugins: [

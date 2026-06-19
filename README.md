@@ -67,9 +67,30 @@ pnpm dev           # Chrome:  vite dev server with HMR
 pnpm dev:firefox   # Firefox: vite dev server with HMR
 ```
 
+## Releasing
+
+Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/release.yml). Cut a **GitHub Release** with a `vX.Y` tag and the workflow builds both targets, names the version from the tag, attaches the packaged zips to the release, and pushes to each store.
+
+Chrome, Edge, and Opera all ship the same Chromium build (`dist/`); Firefox ships the Gecko build (`dist-firefox/`). Each store job no-ops until its secrets exist, and the store jobs run in a `store-release` GitHub Environment so you can require a manual approval before anything is uploaded.
+
+| Store | Automated? | Secrets / setup |
+|-------|-----------|-----------------|
+| **Chrome Web Store** | Uploads a **draft** | `CHROME_EXTENSION_ID`, `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN` ([API setup](https://developer.chrome.com/docs/webstore/using-api)) |
+| **Edge Add-ons** | Uploads to **draft** | `EDGE_PRODUCT_ID`, `EDGE_CLIENT_ID`, `EDGE_API_KEY` (Partner Center → Publish API) |
+| **Firefox (AMO)** | Signs & **submits for review** (gated by approval) | `AMO_JWT_ISSUER`, `AMO_JWT_SECRET` ([API keys](https://addons.mozilla.org/developers/addon/api/key/)) |
+| **Opera** | Manual — no API | Upload the `better-vbtv-chromium.zip` release asset at the [Opera dashboard](https://addons.opera.com/developer/) |
+
+### What else you need to publish on Firefox
+
+- A free **Firefox Add-on Developer (AMO)** account.
+- Mozilla **signs** the add-on for you on upload — no separate signing step.
+- Because the build is bundled/minified, AMO review requires a **source-code submission** with build steps. This repo's `pnpm install` + `pnpm build:firefox` instructions satisfy that; point reviewers at this README.
+- Since the extension collects no data, declare **"No"** for data collection in the submission form (we keep `strict_min_version` at 115, so the newer `data_collection_permissions` manifest key — which requires Firefox 140+ — is intentionally omitted).
+- Listing assets: icons (included), at least one screenshot, a description, and a privacy policy ([PRIVACY.md](PRIVACY.md)).
+
 ## Tech
 
-Built with [SolidJS](https://www.solidjs.com/) + [Vite](https://vitejs.dev/) via [`@crxjs/vite-plugin`](https://crxjs.dev/). Manifest V3.
+Built with [SolidJS](https://www.solidjs.com/) + [Vite](https://vitejs.dev/) via [`@crxjs/vite-plugin`](https://crxjs.dev/). Manifest V3. A small [`src/utils/browser.ts`](src/utils/browser.ts) shim keeps the same source running on Chrome (`chrome`) and Firefox (`browser`).
 
 ## Privacy
 
