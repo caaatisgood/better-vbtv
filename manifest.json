@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Better VBTV",
-  "version": "1.1",
+  "version": "1.1.1",
   "description": "Watch VBTV (Volleyball World TV) replays spoiler-free, with keyboard seek, playback speed, shortcuts overlay, and resume history.",
   "permissions": ["activeTab", "storage"],
   "action": {
