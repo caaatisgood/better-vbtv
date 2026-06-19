@@ -8,3 +8,4 @@ dist-firefox/
 store-assets/
 __pycache__/
 *.pyc
+.env
