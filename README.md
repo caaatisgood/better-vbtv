@@ -42,19 +42,29 @@ Install **Better VBTV** directly: https://chromewebstore.google.com/detail/bette
 
 ```bash
 pnpm install
-pnpm build       # outputs to dist/
+pnpm build       # Chrome  → dist/
+pnpm build:firefox # Firefox → dist-firefox/
 ```
 
-Then load it in Chrome:
+Then load it in **Chrome**:
 
 1. Go to `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked** and select the `dist/` folder
 
+…or in **Firefox**:
+
+1. Go to `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on…**
+3. Select any file inside the `dist-firefox/` folder (e.g. `manifest.json`)
+
+> Temporary add-ons are removed when Firefox restarts. For a packaged build run `pnpm zip:firefox` (produces `extension-firefox.zip`).
+
 ### Development
 
 ```bash
-pnpm dev         # vite dev server with HMR
+pnpm dev           # Chrome:  vite dev server with HMR
+pnpm dev:firefox   # Firefox: vite dev server with HMR
 ```
 
 ## Tech

@@ -27,6 +27,7 @@ import {
 import { getHistory, removeEntry, clearHistory, type HistoryEntry } from '../../utils/history';
 import { formatTime, formatAgo } from '../../utils/videoMeta';
 import { log } from '../../utils/logger';
+import ext from '../../utils/browser';
 
 const SHORTCUTS: { keys: string; label: string }[] = [
   { keys: '?', label: 'Show / hide shortcuts panel' },
@@ -74,7 +75,7 @@ const Popup = () => {
     setHistory(await getHistory());
 
     // Reflect changes made elsewhere (e.g. the "s" hotkey on the page).
-    chrome.storage.onChanged.addListener((changes, area) => {
+    ext.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
       if (changes[NO_SPOILER_STORAGE_KEY]) {
         setIsEnabled((changes[NO_SPOILER_STORAGE_KEY].newValue as boolean | undefined) ?? true);
@@ -99,9 +100,9 @@ const Popup = () => {
   });
 
   const notifyContent = async (enabled: boolean) => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await ext.tabs.query({ active: true, currentWindow: true });
     if (tab?.id && tab.url?.startsWith('https://tv.volleyballworld.com/')) {
-      chrome.tabs.sendMessage(tab.id, {
+      ext.tabs.sendMessage(tab.id, {
         type: 'NO_SPOILER_TOGGLE_STATE_CHANGED',
         enabled,
       });
@@ -130,7 +131,7 @@ const Popup = () => {
   };
 
   const openVideo = (entry: HistoryEntry) => {
-    chrome.tabs.create({ url: entry.url });
+    ext.tabs.create({ url: entry.url });
     window.close();
   };
 

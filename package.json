@@ -13,8 +13,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "dev:firefox": "BROWSER=firefox vite dev",
     "build": "vite build",
-    "zip": "bestzip extension.zip dist/*"
+    "build:firefox": "BROWSER=firefox vite build",
+    "zip": "bestzip extension.zip dist/*",
+    "zip:firefox": "bestzip extension-firefox.zip dist-firefox/*"
   },
   "keywords": [],
   "author": "",

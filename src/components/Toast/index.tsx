@@ -4,6 +4,7 @@ import styles from './Toast.module.css';
 import { registerToast, type ToastAction } from '../../utils/toast';
 import { getToastFontSize, clampFont } from '../../utils/settings';
 import { TOAST_FONT_SIZE_KEY, DEFAULT_TOAST_FONT_SIZE } from '../../constants';
+import ext from '../../utils/browser';
 
 const VISIBLE_MS = 1300;
 
@@ -32,7 +33,7 @@ export function mountToast(rootId: string): void {
   let onDismissCb: (() => void) | null = null;
 
   getToastFontSize().then(setFontSize);
-  chrome.storage.onChanged.addListener((changes, area) => {
+  ext.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes[TOAST_FONT_SIZE_KEY]) {
       setFontSize(clampFont(changes[TOAST_FONT_SIZE_KEY].newValue, DEFAULT_TOAST_FONT_SIZE));
     }
