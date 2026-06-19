@@ -1,13 +1,7 @@
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import { crx } from '@crxjs/vite-plugin'
 import baseManifest from './manifest.json'
-
-// Custom Solid runtime that avoids `innerHTML` (see src/solid-runtime.ts).
-// Compiled JSX imports its runtime from `moduleName`; the alias resolves that
-// virtual specifier to the shim file.
-const solidRuntime = fileURLToPath(new URL('./src/solid-runtime.ts', import.meta.url));
 
 // Target browser, selected via `BROWSER=firefox`. Defaults to Chrome.
 // Chrome, Edge, and Opera are all Chromium and share the "chrome" build.
@@ -41,14 +35,9 @@ const manifest = {
 
 export default defineConfig({
   plugins: [
-    solidPlugin({ solid: { moduleName: 'solid-runtime' } }),
+    solidPlugin(),
     crx({ manifest, browser }),
   ],
-  resolve: {
-    alias: {
-      'solid-runtime': solidRuntime,
-    },
-  },
   server: {
     port: 3000,
   },
