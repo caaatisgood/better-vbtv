@@ -1,7 +1,13 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import { crx } from '@crxjs/vite-plugin'
 import baseManifest from './manifest.json'
+
+// Custom Solid runtime that avoids `innerHTML` (see src/solid-runtime.ts).
+// Compiled JSX imports its runtime from `moduleName`; the alias resolves that
+// virtual specifier to the shim file.
+const solidRuntime = fileURLToPath(new URL('./src/solid-runtime.ts', import.meta.url));
 
 // Target browser, selected via `BROWSER=firefox`. Defaults to Chrome.
 // Chrome, Edge, and Opera are all Chromium and share the "chrome" build.
@@ -25,7 +31,7 @@ const manifest = {
             // Required by AMO: declare what user data the add-on collects.
             // Better VBTV collects nothing, so declare "none".
             data_collection_permissions: {
-              required: ['none'],
+              required: ['none' as const],
             },
           },
         },
@@ -35,9 +41,14 @@ const manifest = {
 
 export default defineConfig({
   plugins: [
-    solidPlugin(),
+    solidPlugin({ solid: { moduleName: 'solid-runtime' } }),
     crx({ manifest, browser }),
   ],
+  resolve: {
+    alias: {
+      'solid-runtime': solidRuntime,
+    },
+  },
   server: {
     port: 3000,
   },
