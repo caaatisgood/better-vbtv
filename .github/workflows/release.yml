@@ -3,8 +3,8 @@ name: Release
 # Publishes the extension to the web stores when a GitHub Release is published.
 # The release tag drives the version (e.g. tag `v1.2` -> manifest version 1.2).
 #
-# Chrome / Edge / Opera all ship the same Chromium build (dist/); Firefox ships
-# the Gecko build (dist-firefox/). Chrome, Edge, and Firefox are auto-submitted
+# Chrome / Edge / Opera all ship the same Chromium build (dist/chromium/); Firefox
+# ships the Gecko build (dist/firefox/). Chrome, Edge, and Firefox are auto-submitted
 # for review; Opera has no API, so its package is attached to the release for
 # manual upload. The store jobs each no-op if their secrets are not configured,
 # so the workflow stays green before credentials are added.
@@ -52,28 +52,28 @@ jobs:
           pnpm build:firefox
 
       - name: Lint the Firefox build
-        run: pnpm dlx web-ext lint --source-dir dist-firefox --self-hosted
+        run: pnpm dlx web-ext lint --source-dir dist/firefox --self-hosted
 
       - name: Package
         run: |
-          ( cd dist && zip -r -FS ../better-vbtv-chromium.zip . )
-          ( cd dist-firefox && zip -r -FS ../better-vbtv-firefox.zip . )
+          ( cd dist/chromium && zip -r -FS ../better-vbtv-chromium.zip . )
+          ( cd dist/firefox && zip -r -FS ../better-vbtv-firefox.zip . )
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: extension-packages
           path: |
-            better-vbtv-chromium.zip
-            better-vbtv-firefox.zip
+            dist/better-vbtv-chromium.zip
+            dist/better-vbtv-firefox.zip
 
       - name: Attach packages to the release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            better-vbtv-chromium.zip
-            better-vbtv-firefox.zip
+            dist/better-vbtv-chromium.zip
+            dist/better-vbtv-firefox.zip
 
   chrome:
     needs: build
@@ -162,13 +162,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: extension-packages
-      - run: mkdir -p dist-firefox && unzip -o better-vbtv-firefox.zip -d dist-firefox
+      - run: mkdir -p dist/firefox && unzip -o better-vbtv-firefox.zip -d dist/firefox
       # Signs and submits the listed version to AMO for review.
       - name: Sign & submit to AMO (listed)
         if: ${{ env.AMO_JWT_SECRET != '' }}
         run: >-
           pnpm dlx web-ext sign
-          --source-dir dist-firefox
+          --source-dir dist/firefox
           --channel listed
           --api-key "$AMO_JWT_ISSUER"
           --api-secret "$AMO_JWT_SECRET"

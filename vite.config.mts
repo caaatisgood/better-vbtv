@@ -47,8 +47,8 @@ export default defineConfig({
   build: {
     target: 'esnext',
     minify: 'esbuild',
-    // Keep Chrome and Firefox artifacts side by side.
-    outDir: browser === 'firefox' ? 'dist-firefox' : 'dist',
+    // Keep Chrome and Firefox artifacts side by side under dist/.
+    outDir: browser === 'firefox' ? 'dist/firefox' : 'dist/chromium',
     // crxjs defaults this to false, so stale hashed chunks from previous
     // builds linger in outDir and get swept into the zip (bloating it).
     // Force a clean build dir each time.

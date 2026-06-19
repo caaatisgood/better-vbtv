@@ -1,6 +1,6 @@
 # Better VBTV
 
-A Chrome extension that makes watching [VBTV (Volleyball World TV)](https://tv.volleyballworld.com) replays better — **spoiler-free**, with keyboard controls, playback speed, and an automatic watch history that remembers where you left off.
+A browser extension (Chrome & Firefox) that makes watching [VBTV (Volleyball World TV)](https://tv.volleyballworld.com) replays better — **spoiler-free**, with keyboard controls, playback speed, and an automatic watch history that remembers where you left off.
 
 ## Features
 
@@ -42,23 +42,23 @@ Install **Better VBTV** directly: https://chromewebstore.google.com/detail/bette
 
 ```bash
 pnpm install
-pnpm build       # Chrome  → dist/
-pnpm build:firefox # Firefox → dist-firefox/
+pnpm build       # Chrome  → dist/chromium/
+pnpm build:firefox # Firefox → dist/firefox/
 ```
 
 Then load it in **Chrome**:
 
 1. Go to `chrome://extensions`
 2. Enable **Developer mode**
-3. Click **Load unpacked** and select the `dist/` folder
+3. Click **Load unpacked** and select the `dist/chromium/` folder
 
 …or in **Firefox**:
 
 1. Go to `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on…**
-3. Select any file inside the `dist-firefox/` folder (e.g. `manifest.json`)
+3. Select any file inside the `dist/firefox/` folder (e.g. `manifest.json`)
 
-> Temporary add-ons are removed when Firefox restarts. For a packaged build run `pnpm zip:firefox` (produces `extension-firefox.zip`).
+> Temporary add-ons are removed when Firefox restarts. For a packaged build run `pnpm zip:firefox` (produces `dist/better-vbtv-firefox.zip`).
 
 ### Development
 
@@ -71,7 +71,7 @@ pnpm dev:firefox   # Firefox: vite dev server with HMR
 
 Publishing is automated by [`.github/workflows/release.yml`](.github/workflows/release.yml). Cut a **GitHub Release** with a `vX.Y` tag and the workflow builds both targets, names the version from the tag, attaches the packaged zips to the release, and pushes to each store.
 
-Chrome, Edge, and Opera all ship the same Chromium build (`dist/`); Firefox ships the Gecko build (`dist-firefox/`). Each store job no-ops until its secrets exist. The store jobs run in an optional `store-release` GitHub Environment — leave it unprotected for hands-off releases, or add required reviewers there if you ever want a manual gate.
+Chrome, Edge, and Opera all ship the same Chromium build (`dist/chromium/`); Firefox ships the Gecko build (`dist/firefox/`). Each store job no-ops until its secrets exist. The store jobs run in an optional `store-release` GitHub Environment — leave it unprotected for hands-off releases, or add required reviewers there if you ever want a manual gate.
 
 | Store | Automated? | Secrets / setup |
 |-------|-----------|-----------------|
