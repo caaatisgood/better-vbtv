@@ -79,12 +79,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: store-release # optional: add required reviewers for a manual gate
+    # `secrets` can't be used in `if:`; surface the gate secret as env so the
+    # step can no-op when credentials are absent.
+    env:
+      CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: extension-packages
       - name: Submit to Chrome Web Store
-        if: ${{ secrets.CHROME_REFRESH_TOKEN != '' }}
+        if: ${{ env.CHROME_REFRESH_TOKEN != '' }}
         env:
           EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
@@ -98,12 +102,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: store-release
+    env:
+      EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: extension-packages
       - name: Upload & submit to Edge Add-ons
-        if: ${{ secrets.EDGE_API_KEY != '' }}
+        if: ${{ env.EDGE_API_KEY != '' }}
         env:
           PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
           CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
@@ -149,6 +155,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: store-release
+    env:
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -156,10 +165,10 @@ jobs:
       - run: mkdir -p dist-firefox && unzip -o better-vbtv-firefox.zip -d dist-firefox
       # Signs and submits the listed version to AMO for review.
       - name: Sign & submit to AMO (listed)
-        if: ${{ secrets.AMO_JWT_SECRET != '' }}
+        if: ${{ env.AMO_JWT_SECRET != '' }}
         run: >-
           pnpm dlx web-ext sign
           --source-dir dist-firefox
           --channel listed
-          --api-key "${{ secrets.AMO_JWT_ISSUER }}"
-          --api-secret "${{ secrets.AMO_JWT_SECRET }}"
+          --api-key "$AMO_JWT_ISSUER"
+          --api-secret "$AMO_JWT_SECRET"
