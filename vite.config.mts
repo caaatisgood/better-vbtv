@@ -22,6 +22,11 @@ const manifest = {
           gecko: {
             id: 'better-vbtv@caaatisgood',
             strict_min_version: '115.0',
+            // Required by AMO: declare what user data the add-on collects.
+            // Better VBTV collects nothing, so declare "none".
+            data_collection_permissions: {
+              required: ['none'],
+            },
           },
         },
       }
