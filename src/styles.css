@@ -1,8 +1,3 @@
-/* hide runtime label on list view */
-body:not(.with-spoiler) .bg-runtime {
-  filter: blur(2.5px);
-}
-
 /* hide vid control bar */
 body:not(.with-spoiler) .vjs-control-bar {
   display: none !important;
