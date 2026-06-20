@@ -2,7 +2,6 @@
 import { createSignal, createEffect, onMount, onCleanup, For, Show } from 'solid-js';
 import { Switch } from '../Switch';
 import styles from './Popup.module.css';
-import logoUrl from '../../../icons/icon-128.png';
 import {
   NO_SPOILER_STORAGE_KEY,
   DEFAULT_SEEK_SMALL,
@@ -28,6 +27,10 @@ import { getHistory, removeEntry, clearHistory, type HistoryEntry } from '../../
 import { formatTime, formatAgo } from '../../utils/videoMeta';
 import { log } from '../../utils/logger';
 import ext from '../../utils/browser';
+
+// Reference the packaged manifest icon directly instead of `import`ing it, so
+// the bundler doesn't emit a second hashed copy of the 128px PNG into assets/.
+const logoUrl = ext.runtime.getURL('icons/icon-128.png');
 
 const SHORTCUTS: { keys: string; label: string }[] = [
   { keys: '?', label: 'Show / hide shortcuts panel' },

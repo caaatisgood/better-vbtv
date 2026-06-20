@@ -15,8 +15,8 @@
     "dev": "vite dev",
     "dev:firefox": "BROWSER=firefox vite dev",
     "start:firefox": "web-ext run --source-dir dist/firefox --start-url https://tv.volleyballworld.com",
-    "build": "vite build",
-    "build:firefox": "BROWSER=firefox vite build",
+    "build": "rm -rf dist/chromium && vite build",
+    "build:firefox": "rm -rf dist/firefox && BROWSER=firefox vite build",
     "zip": "cd dist/chromium && bestzip ../better-vbtv-chromium.zip *",
     "zip:firefox": "cd dist/firefox && bestzip ../better-vbtv-firefox.zip *"
   },
