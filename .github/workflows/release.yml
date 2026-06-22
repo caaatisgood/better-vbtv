@@ -83,6 +83,9 @@ jobs:
     env:
       CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
     steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - uses: actions/download-artifact@v4
         with:
           name: extension-packages
@@ -94,8 +97,9 @@ jobs:
           CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
           REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
         # `--auto-publish` uploads the new version and submits it; Chrome
-        # publishes automatically once review passes.
-        run: pnpm dlx chrome-webstore-upload-cli@3 upload --source better-vbtv-chromium.zip --auto-publish
+        # publishes automatically once review passes. This job doesn't check out
+        # the repo, so run the CLI with npx rather than pnpm (not installed here).
+        run: npx -y chrome-webstore-upload-cli@3 upload --source better-vbtv-chromium.zip --auto-publish
 
   firefox:
     needs: build
@@ -105,15 +109,19 @@ jobs:
       AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
       AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
     steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - uses: actions/download-artifact@v4
         with:
           name: extension-packages
       - run: mkdir -p dist/firefox && unzip -o better-vbtv-firefox.zip -d dist/firefox
-      # Signs and submits the listed version to AMO for review.
+      # Signs and submits the listed version to AMO for review. No repo checkout
+      # here, so invoke web-ext with npx rather than pnpm (not installed).
       - name: Sign & submit to AMO (listed)
         if: ${{ env.AMO_JWT_SECRET != '' }}
         run: >-
-          pnpm dlx web-ext sign
+          npx -y web-ext sign
           --source-dir dist/firefox
           --channel listed
           --api-key "$AMO_JWT_ISSUER"
