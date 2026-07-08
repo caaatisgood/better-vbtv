@@ -161,9 +161,7 @@ export class VideoController implements PlayerShortcuts {
       }
     };
 
-    // Capture phase (like the global handler in content.ts) so we receive keys
-    // before video.js swallows them; e.g. when a control such as the fullscreen
-    // button is focused, its bubble-phase handler would otherwise eat arrow keys.
+    // Capture phase so we receive keys before video.js swallows them
     document.addEventListener('keydown', this.keydownListener, true);
 
     // Media key support
