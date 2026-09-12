@@ -1,5 +1,4 @@
 import { onCleanup, type Component, createEffect, createSignal } from 'solid-js';
-import { useLocation } from '@solidjs/router';
 
 import { PAGE_PATHS, VIDEO_SELECTOR } from '../constants';
 import { log } from '../utils/logger';
@@ -11,7 +10,10 @@ import { VideoController } from './VideoController';
 const App: Component = () => {
   const [videoController, setVideoController] = createSignal<VideoController | null>(null);
 
-  const { pathname } = useLocation();
+  // content.ts owns route detection (Navigation API, with a MutationObserver
+  // fallback) and only mounts this component on the player page, tearing it
+  // down on navigation away. So a one-time read here is all the guard needs.
+  const pathname = window.location.pathname;
 
   const cleanup = () => {
     if (videoController()) {
