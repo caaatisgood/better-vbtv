@@ -26,7 +26,7 @@
   "license": "ISC",
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.6.1",
-    "@types/chrome": "^0.1.43",
+    "@types/chrome": "^0.2.9",
     "@types/node": "^22.18.0",
     "bestzip": "^3.0.1",
     "cross-env": "^10.1.0",
