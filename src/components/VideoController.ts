@@ -20,6 +20,7 @@ interface PlayerShortcuts {
   adjustPlaybackRate(delta: number): void;
   togglePlay(): void;
   toggleFullscreen(): void;
+  cycleAudioTrack(): void;
 }
 
 interface VideoControllerOptions {
@@ -178,6 +179,11 @@ export class VideoController implements PlayerShortcuts {
         // Fullscreen
         case 'f':
           this.toggleFullscreen();
+          break;
+
+        // Audio track
+        case 'a':
+          this.cycleAudioTrack();
           break;
 
         default:
@@ -457,5 +463,32 @@ export class VideoController implements PlayerShortcuts {
         void this.video?.requestFullscreen?.();
       },
     );
+  }
+
+  // VBTV's player (video.js) renders its own "Audio Track" menu button for
+  // matches with alternate audio (e.g. commentary language / ambient sound).
+  // Track selection is video.js's own object model, not the native
+  // HTMLMediaElement, so we drive it by clicking its menu items directly —
+  // this works whether or not the popup is currently open on screen.
+  public cycleAudioTrack(): void {
+    const container = this.video?.closest('.video-js');
+    if (!container) return;
+
+    const items = Array.from(
+      container.querySelectorAll<HTMLElement>('.vjs-audio-button .vjs-menu-item')
+    );
+    if (items.length < 2) {
+      toast('🎧 No alternate audio tracks');
+      return;
+    }
+
+    const currentIndex = items.findIndex(
+      (el) => el.classList.contains('vjs-selected') || el.getAttribute('aria-checked') === 'true'
+    );
+    const next = items[(currentIndex + 1) % items.length];
+    next.click();
+
+    const label = next.querySelector('.vjs-menu-item-text')?.textContent?.trim();
+    toast(`🎧 ${label || 'Audio track switched'}`);
   }
 }

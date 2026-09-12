@@ -39,6 +39,7 @@ const SHORTCUTS: { keys: string; label: string }[] = [
   { keys: 'j l', label: 'Seek (large interval)' },
   { keys: 'space k', label: 'Play / pause' },
   { keys: 'f', label: 'Toggle fullscreen' },
+  { keys: 'a', label: 'Cycle audio track' },
   { keys: '< >', label: 'Slow down / speed up' },
   { keys: '↑ ↓ m', label: 'Volume / mute' },
   { keys: ', .', label: 'Frame step (paused)' },
