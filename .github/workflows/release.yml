@@ -86,7 +86,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 20
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: extension-packages
       - name: Submit to Chrome Web Store
@@ -112,7 +112,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 20
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: extension-packages
       - run: mkdir -p dist/firefox && unzip -o better-vbtv-firefox.zip -d dist/firefox
