@@ -16,6 +16,7 @@
     "dev": "vite dev",
     "dev:firefox": "cross-env BROWSER=firefox vite dev",
     "start:firefox": "web-ext run --source-dir dist/firefox --start-url https://tv.volleyballworld.com",
+    "typecheck": "tsc --noEmit",
     "build": "rimraf dist/chromium && vite build",
     "build:firefox": "rimraf dist/firefox && cross-env BROWSER=firefox vite build",
     "zip": "cd dist/chromium && bestzip ../better-vbtv-chromium.zip *",

@@ -1,0 +1,54 @@
+name: CI
+
+# Verifies every pull request and every push to main.
+#
+# These are the same checks the release build runs (see release.yml), just run
+# early: release.yml only fires on a published release, so without this a broken
+# build or a reintroduced advisory would not surface until ship day.
+#
+# `pnpm audit --prod` gates on the dependencies that actually ship in the
+# extension. Dev-only advisories are deliberately out of scope here: the build
+# toolchain (vite-plugin-solid -> @babel/*, brace-expansion, browserslist)
+# carries known transitive findings that never reach a user, and gating on them
+# would leave this job permanently red and therefore ignored.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build Chromium (Chrome / Opera)
+        run: pnpm build
+
+      - name: Build Firefox
+        run: pnpm build:firefox
+
+      - name: Lint the Firefox build
+        run: pnpm dlx web-ext lint --source-dir dist/firefox --self-hosted
+
+      # Shipped dependencies only — see the note at the top of this file.
+      - name: Audit production dependencies
+        run: pnpm audit --prod
