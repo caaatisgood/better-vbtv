@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.1 — 2026-09-13
+
+### Changes
+
+- Dropped two unused dependencies (`@solidjs/router`, `solid-devtools`). The content script injected into every VBTV page is ~43% smaller (28.6 KB to 16.3 KB; 10.8 KB to 5.8 KB gzipped) and the packaged extension ~14% smaller (40.1 KB to 34.6 KB). No change in behaviour.
+- Updated build dependencies and the GitHub Actions behind the release pipeline.
+- Pull requests are now typechecked, built for both browsers, linted, and audited for advisories in shipped dependencies before merge. (#25)
+
 ## v1.3.0 — 2026-09-12
 
 ### Features

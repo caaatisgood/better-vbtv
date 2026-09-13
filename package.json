@@ -1,6 +1,6 @@
 {
   "name": "better-vbtv",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "packageManager": "pnpm@9.12.1",
   "description": "Better VBTV — spoiler-free Volleyball World TV with keyboard controls and watch history",
   "repository": {
