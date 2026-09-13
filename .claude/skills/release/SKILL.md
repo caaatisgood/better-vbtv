@@ -16,9 +16,9 @@ This extension publishes **on GitHub Release published** (see
 builds Chromium + Firefox, packages, and submits to Chrome / Edge / AMO.
 Opera is attached to the release for manual upload.
 
-So a release = **bump the version files, tag `vX.Y.Z`, then publish a GitHub
-Release**. Creating that release is what submits to the stores — gate it behind
-explicit user confirmation.
+So a release = **bump the version files on `main`, tag `vX.Y.Z`, then publish a
+GitHub Release**. Creating that release is what submits to the stores — gate it
+behind explicit user confirmation.
 
 Version scheme: **semver `X.Y.Z`**, tags **`vX.Y.Z`**. Keep `package.json` and
 `manifest.json` versions identical. (They have drifted before — `1.1.0` vs
@@ -104,26 +104,54 @@ With the confirmed `X.Y.Z`:
    Only include non-empty groups. Derive entries from the categorized commits;
    drop pure-tooling commits (ci/build/chore) unless user-visible. Get the date
    from `date +%F` — do not guess it.
-3. (Optional sanity check, recommended) build locally to confirm it's green
-   before tagging:
+3. (Optional sanity check, recommended) run the same checks CI runs, to confirm
+   it's green before tagging:
    ```bash
-   npm run build && npm run build:firefox
+   pnpm typecheck && pnpm build && pnpm build:firefox && pnpm audit --prod
    ```
-   If a build fails, stop and report — do not tag a broken build.
+   If any of them fails, stop and report — do not tag a broken build.
 
-## Step 5 — Commit, tag, push
+## Step 5 — Land the version bump on `main`
+
+`main` does not accept a direct push from every caller. An agent session's git
+credentials are typically scoped to its own working branch, so
+`git push origin main` fails with a bare `403` during send-pack even though the
+same credentials push a branch fine. **Route the bump through a pull request.**
 
 ```bash
+git checkout -b release/vX.Y.Z          # or the session's designated branch
 git add package.json manifest.json CHANGELOG.md
 git commit -m "chore(release): vX.Y.Z"
-git tag -a "vX.Y.Z" -m "vX.Y.Z"
-git push origin main --follow-tags
+git push -u origin HEAD
 ```
 
-Pushing the tag alone does **not** publish — CI fires on *release published*,
-not tag push. So this step is safe; the publish gate is Step 6.
+Open a PR against `main`, let CI pass, then merge it. CI (`.github/workflows/ci.yml`)
+typechecks, builds both browsers, lints, and audits shipped dependencies — a red
+run here means do not release.
 
-## Step 6 — Publish the GitHub Release (the store-submit trigger)
+A direct `git push origin main` still works for a human with push access; use it
+if you have it and skip the PR.
+
+## Step 6 — Tag the merged commit
+
+The tag must point at the commit that actually landed on `main`. A squash merge
+creates a **new** SHA, so tag after merging, not before:
+
+```bash
+git checkout main && git pull
+git tag -a "vX.Y.Z" -m "vX.Y.Z"
+git push origin "vX.Y.Z"
+```
+
+Tag pushes can be blocked by the same branch-scoped credentials that block
+`main`. If `git push origin "vX.Y.Z"` returns 403, you cannot create the tag —
+hand Steps 6 and 7 to the user with the exact commands rather than working
+around it.
+
+Pushing the tag does **not** publish — CI fires on *release published*, not tag
+push. So this step is safe; the publish gate is Step 7.
+
+## Step 7 — Publish the GitHub Release (the store-submit trigger)
 
 ⚠️ This step submits the extension to the Chrome Web Store, Edge Add-ons, and
 AMO (whichever have CI secrets configured). **Confirm with the user before
@@ -136,10 +164,27 @@ section body), then:
 gh release create "vX.Y.Z" --title "vX.Y.Z" --notes "<release notes>"
 ```
 
+If `gh` is unavailable (some agent environments have no `gh` CLI, and the GitHub
+MCP server exposes only read-only release tools), you cannot create the release.
+Give the user the command above with the notes filled in and let them run it, or
+have them click **Draft a new release** on the tag.
+
+Last resort only, and only if the user accepts the tradeoffs: `release.yml` also
+has a `workflow_dispatch` with a `version` input, which builds and submits to the
+stores without a release. It skips the "attach packages to the release" step, so
+there is no release record and no Opera zip to hand out — the packages are only
+in the run's artifacts.
+
 After it's created, report the release URL and remind the user:
 - CI is now building + submitting; watch it with `gh run watch` or the Actions tab.
 - Opera has no API — its zip is attached to the release for manual upload.
 - Store review can take hours to days before the new version goes live.
+
+Verify rather than assume the stores got it: the `chrome` and `firefox` jobs are
+written to **no-op silently when their secrets are absent**, so a green job does
+not prove a submission. Check the job logs — Chrome should show
+`Publish successful`, AMO should show `Signed xpi downloaded`. AMO takes several
+minutes longer than Chrome because it validates and approves before signing.
 
 ---
 
