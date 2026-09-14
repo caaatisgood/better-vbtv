@@ -197,8 +197,14 @@ export class VideoController implements PlayerShortcuts {
       }
     };
 
-    // Capture phase: fire before a focused video.js control swallows the key.
-    document.addEventListener('keydown', this.keydownListener, true);
+    // On `window`, capture phase — the node matters as much as the phase. The
+    // page runs its own ±10s arrow seek from a keydown listener on `document`,
+    // registered before this one (its player mounts before ElementObserver finds
+    // the <video>), so on `document` it ran *first* — leaving seek() to read an
+    // already-advanced currentTime and add 5 to the page's 10. Capture descends
+    // window -> document, so from here we both read a clean position and can
+    // stopPropagation() before the page's listener is ever reached.
+    window.addEventListener('keydown', this.keydownListener, true);
 
     // Media key support
     if ('mediaSession' in navigator) {
@@ -382,7 +388,7 @@ export class VideoController implements PlayerShortcuts {
 
     // Remove event listeners
     if (this.keydownListener) {
-      document.removeEventListener('keydown', this.keydownListener, true);
+      window.removeEventListener('keydown', this.keydownListener, true);
       this.keydownListener = null;
     }
 
