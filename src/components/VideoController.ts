@@ -6,6 +6,7 @@ import {
   DEFAULT_SEEK_LARGE,
   SEEK_SMALL_KEY,
   SEEK_LARGE_KEY,
+  SEEK_ENFORCE_TOLERANCE_SEC,
   WATCH_QUALIFY_SEC,
   POSITION_SAVE_SEC,
 } from "../constants";
@@ -37,6 +38,7 @@ export class VideoController implements PlayerShortcuts {
   private readonly PLAYBACK_RATE_DELTA = 0.20;
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
   private seekSmall: number = DEFAULT_SEEK_SMALL;
+  private seekEnforceTimer: ReturnType<typeof setTimeout> | null = null;
   private seekLarge: number = DEFAULT_SEEK_LARGE;
   private storageListener: Parameters<typeof chrome.storage.onChanged.addListener>[0] | null = null;
 
@@ -197,8 +199,14 @@ export class VideoController implements PlayerShortcuts {
       }
     };
 
-    // Capture phase: fire before a focused video.js control swallows the key.
-    document.addEventListener('keydown', this.keydownListener, true);
+    // On `window`, capture phase, and the node matters as much as the phase.
+    // The page seeks by its own ±10s from a keydown listener on `document`,
+    // registered before this one (its player mounts before ElementObserver finds
+    // the <video>), so on `document` it ran *first* — leaving seek() to read an
+    // already-advanced currentTime and add 5 to the page's 10. Capture descends
+    // window -> document, so from here we both read a clean position and can
+    // stopPropagation() before the page's listener is ever reached.
+    window.addEventListener('keydown', this.keydownListener, true);
 
     // Media key support
     if ('mediaSession' in navigator) {
@@ -375,6 +383,10 @@ export class VideoController implements PlayerShortcuts {
     if (this.beforeUnloadListener) {
       window.removeEventListener('beforeunload', this.beforeUnloadListener);
     }
+    if (this.seekEnforceTimer) {
+      clearTimeout(this.seekEnforceTimer);
+      this.seekEnforceTimer = null;
+    }
     this.timeupdateListener = null;
     this.seekedListener = null;
     this.pauseListener = null;
@@ -382,7 +394,7 @@ export class VideoController implements PlayerShortcuts {
 
     // Remove event listeners
     if (this.keydownListener) {
-      document.removeEventListener('keydown', this.keydownListener, true);
+      window.removeEventListener('keydown', this.keydownListener, true);
       this.keydownListener = null;
     }
 
@@ -401,9 +413,29 @@ export class VideoController implements PlayerShortcuts {
     this.video = null;
   }
 
+  // The target is re-asserted a tick later as a backstop. Listening on `window`
+  // (see setupShortcuts) means the page's own ±10s arrow seek is stopped before
+  // it runs, so normally nothing contests this write; the check costs one timer
+  // and catches a page seek we failed to preempt, which would otherwise land
+  // silently on top of ours.
   public seek(seconds: number): void {
     if (!this.video) return;
-    this.video.currentTime = Math.max(0, Math.min(this.video.duration, this.video.currentTime + seconds));
+    const target = Math.max(0, Math.min(this.video.duration, this.video.currentTime + seconds));
+    this.video.currentTime = target;
+    this.enforceSeekTarget(target);
+  }
+
+  private enforceSeekTarget(target: number): void {
+    if (this.seekEnforceTimer) clearTimeout(this.seekEnforceTimer);
+    this.seekEnforceTimer = setTimeout(() => {
+      this.seekEnforceTimer = null;
+      if (!this.video) return;
+      // Anything past the tolerance is the page's skip, not playback drift.
+      if (Math.abs(this.video.currentTime - target) > SEEK_ENFORCE_TOLERANCE_SEC) {
+        log(`seek: page moved playhead to ${this.video.currentTime}, restoring ${target}`);
+        this.video.currentTime = target;
+      }
+    }, 0);
   }
 
   public seekFrame(frames: number): void {

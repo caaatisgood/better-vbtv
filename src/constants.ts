@@ -13,6 +13,11 @@ export const SEEK_SMALL_KEY = 'SEEK_SMALL'
 export const SEEK_LARGE_KEY = 'SEEK_LARGE'
 export const DEFAULT_SEEK_SMALL = 5
 export const DEFAULT_SEEK_LARGE = 10
+// The page runs its own ±10s skip on the arrow keys from a capture-phase
+// listener registered before ours, so our seek is re-asserted a tick later.
+// Tolerance has to clear normal playback drift between the two writes (a few
+// ms, even at 5x rate) while staying well under the smallest contested delta.
+export const SEEK_ENFORCE_TOLERANCE_SEC = 0.5
 
 // Toast appearance
 export const TOAST_FONT_SIZE_KEY = 'TOAST_FONT_SIZE'
