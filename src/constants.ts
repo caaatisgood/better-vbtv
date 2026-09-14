@@ -22,6 +22,9 @@ export const DEFAULT_TOAST_FONT_SIZE = 12
 export const WATCH_HISTORY_KEY = 'WATCH_HISTORY'
 // Min continuous playtime (seconds) before a video is recorded to history.
 export const WATCH_QUALIFY_SEC = 5
+// How long to wait for the player to report metadata before giving up on the
+// auto-resume seek (ms) — currentTime writes before that are dropped.
+export const RESUME_METADATA_WAIT_MS = 5000
 // Throttle/debounce for persisting the resume position (seconds).
 export const POSITION_SAVE_SEC = 5
 // Cap the stored list so storage can't grow unbounded.
