@@ -34,7 +34,7 @@
     "cross-env": "^10.1.0",
     "navigation-api-types": "^0.6.1",
     "rimraf": "^6.1.3",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^6.4.3",
     "vite-plugin-solid": "^2.11.14",
     "vitest": "^5.0.0"
