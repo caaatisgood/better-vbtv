@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.0 — 2026-09-28
+
+### Features
+
+- Watch-progress bar on video thumbnails: browse pages and the popup's history show a YouTube-style red bar for how far you've watched. With spoilers hidden, page thumbnails show "Watched N min" instead, and the popup reads "Watched 12:34 · 2h ago", so the bar can't give away a match's length. (#30)
+- The player now jumps straight to where you left off, replacing the "Resume from mm:ss?" prompt. (#33)
+
+### Fixes
+
+- Arrow keys now seek 5s as intended. They had been moving 15s because the page's own ±10s seek ran first. (#31)
+- Removed our `m` mute shortcut now that VBTV has its own. The two were cancelling each other out, so pressing M looked like it did nothing. (#29)
+
 ## v1.3.1 — 2026-09-13
 
 ### Changes
